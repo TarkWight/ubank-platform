@@ -1,0 +1,16 @@
+{
+  "traceId": "4c1af2f7-b6d9-4584-9f2b-86f3eb234f3b",
+  "eventType": "RESPONSE",
+  "timestamp": "2026-04-14T12:33:41.000Z",
+  "service": "core-service",
+  "operation": "CreateTransfer",
+  "spanId": "a-span-id",
+  "parentSpanId": null,
+  "method": "POST",
+  "path": "/api/transfers",
+  "status": 200,
+  "durationMs": 48,
+  "success": true,
+  "attempt": 1,
+  "error": null
+}
