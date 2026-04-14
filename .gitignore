@@ -1,3 +1,6 @@
+### Environments
+.env
+
 ### C/C++
 # Object files
 *.o
