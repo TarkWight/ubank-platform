@@ -38,7 +38,10 @@ pub async fn get_trace(
     let events = state.get_trace_query.execute(&trace_id).await?;
 
     if events.is_empty() {
-        return Err(AppError::not_found(format!("trace '{}' not found", trace_id)));
+        return Err(AppError::not_found(format!(
+            "trace '{}' not found",
+            trace_id
+        )));
     }
 
     Ok(Json(TraceResponse::from_trace_events(trace_id, events)))
