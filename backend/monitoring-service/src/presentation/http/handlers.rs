@@ -41,10 +41,7 @@ pub async fn get_trace(
         return Err(AppError::not_found(format!("trace '{}' not found", trace_id)));
     }
 
-    Ok(Json(TraceResponse {
-        trace_id,
-        events,
-    }))
+    Ok(Json(TraceResponse::from_trace_events(trace_id, events)))
 }
 
 pub async fn get_overview_metrics(
