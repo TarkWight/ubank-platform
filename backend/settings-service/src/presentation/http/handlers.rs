@@ -54,11 +54,14 @@ pub async fn get_settings(
     let response = state
         .settings_service
         .get_settings(auth.user_id, app_kind)
-        .await?;
+        .await
+        .map_err(|err| {
+            tracing::error!("get_settings failed: {:?}", err);
+            err
+        })?;
 
     Ok(Json(response))
 }
-
 pub async fn update_theme(
     State(state): State<HttpState>,
     Extension(auth): Extension<AuthContext>,
