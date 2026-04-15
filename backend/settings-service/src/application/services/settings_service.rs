@@ -38,12 +38,18 @@ impl SettingsApplicationService {
         user_id: Uuid,
         app_kind: AppKind,
     ) -> Result<SettingsResponse, ApplicationError> {
+        tracing::info!("settings_service.get_settings started: user_id={}, app_kind={:?}", user_id, app_kind);
+
         let settings = self
             .settings_repo
             .find_by_user_and_app(user_id, app_kind)
             .await?;
 
+        tracing::info!("settings_service.get_settings: settings loaded");
+
         let hidden_account_ids = self.hidden_repo.list(user_id, app_kind).await?;
+
+        tracing::info!("settings_service.get_settings: hidden accounts loaded");
 
         match settings {
             Some(settings) => Ok(SettingsResponse {
