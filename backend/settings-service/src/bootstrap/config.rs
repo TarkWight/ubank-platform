@@ -44,7 +44,7 @@ impl Config {
         let jwt_secret =
             env::var("JWT_SECRET").map_err(|_| ConfigError::MissingJwtSecret)?;
 
-        let default_locale = env::var("DEFAULT_LOCALE").unwrap_or_else(|_| "ru-RU".to_string());
+        let default_locale = env::var("DEFAULT_LOCALE").unwrap_or_else(|_| "rus".to_string());
 
         let fault_injection_enabled = env::var("FAULT_INJECTION_ENABLED")
             .unwrap_or_else(|_| "false".to_string())
