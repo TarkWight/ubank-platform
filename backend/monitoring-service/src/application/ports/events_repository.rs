@@ -124,6 +124,21 @@ pub struct ServiceMetricsView {
     pub total_idempotency_conflicts: i64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct OperationMetricsView {
+    pub service: String,
+    pub operation: String,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
 #[async_trait]
 pub trait EventsRepository: Send + Sync {
     async fn ping(&self) -> AppResult<()>;
@@ -158,4 +173,6 @@ pub trait EventsRepository: Send + Sync {
     async fn get_overview_metrics(&self) -> AppResult<OverviewMetrics>;
 
     async fn get_metrics_by_service(&self) -> AppResult<Vec<ServiceMetricsView>>;
+
+    async fn get_metrics_by_operation(&self) -> AppResult<Vec<OperationMetricsView>>;
 }

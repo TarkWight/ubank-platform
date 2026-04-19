@@ -18,6 +18,7 @@ use crate::{
             TraceResponse,
             EventListResponse,
             ServiceMetricsResponse,
+            OperationMetricsResponse,
         },
         state::HttpState,
     },
@@ -244,4 +245,14 @@ fn parse_optional_rfc3339(
         }
         None => Ok(None),
     }
+}
+
+pub async fn get_metrics_by_operation(
+    State(state): State<HttpState>,
+) -> AppResult<Json<OperationMetricsResponse>> {
+    let items = state.get_metrics_by_operation_query.execute().await?;
+
+    Ok(Json(OperationMetricsResponse {
+        items: items.into_iter().map(Into::into).collect(),
+    }))
 }

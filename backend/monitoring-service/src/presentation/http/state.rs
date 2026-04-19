@@ -4,6 +4,7 @@ use crate::{
         queries::{
             get_event_list_query::GetEventListQuery,
             get_idempotency_query::GetIdempotencyQuery,
+            get_metrics_by_operation_query::GetMetricsByOperationQuery,
             get_metrics_by_service_query::GetMetricsByServiceQuery,
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_list_query::GetTraceListQuery,
@@ -26,4 +27,5 @@ pub struct HttpState {
     pub get_idempotency_query: GetIdempotencyQuery,
     pub get_overview_metrics_query: GetOverviewMetricsQuery,
     pub get_metrics_by_service_query: GetMetricsByServiceQuery,
+    pub get_metrics_by_operation_query: GetMetricsByOperationQuery,
 }

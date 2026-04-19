@@ -8,6 +8,7 @@ use crate::{
         EventListQuery,
         EventsRepository,
         IdempotencyEventView,
+        OperationMetricsView,
         OverviewMetrics,
         ServiceMetricsView,
         TraceEventView,
@@ -374,6 +375,48 @@ impl EventsRepository for PostgresEventsRepository {
             .into_iter()
             .map(|row| ServiceMetricsView {
                 service: row.get("service"),
+                total_events: row.get("total_events"),
+                total_requests: row.get("total_requests"),
+                total_errors: row.get("total_errors"),
+                avg_duration_ms: row.get("avg_duration_ms"),
+                total_retries: row.get("total_retries"),
+                total_circuit_breaker_open: row.get("total_circuit_breaker_open"),
+                total_idempotency_replays: row.get("total_idempotency_replays"),
+                total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
+                total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+            })
+            .collect())
+    }
+
+    async fn get_metrics_by_operation(&self) -> AppResult<Vec<OperationMetricsView>> {
+        let rows = sqlx::query(
+            r#"
+            select
+                service,
+                operation,
+                count(*)::bigint as total_events,
+                count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
+                count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+                avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
+                count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
+                count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
+                count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
+                count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+            from monitoring_events
+            where operation is not null and btrim(operation) <> ''
+            group by service, operation
+            order by service asc, operation asc
+            "#,
+        )
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| OperationMetricsView {
+                service: row.get("service"),
+                operation: row.get("operation"),
                 total_events: row.get("total_events"),
                 total_requests: row.get("total_requests"),
                 total_errors: row.get("total_errors"),

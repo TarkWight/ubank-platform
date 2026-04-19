@@ -7,6 +7,7 @@ use crate::domain::monitoring_event::MonitoringEvent;
 use crate::application::ports::events_repository::{
     EventListItemView,
     IdempotencyEventView,
+    OperationMetricsView,
     OverviewMetrics,
     ServiceMetricsView,
     TraceEventView,
@@ -154,6 +155,29 @@ pub struct ServiceMetricsItemResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ServiceMetricsResponse {
     pub items: Vec<ServiceMetricsItemResponse>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OperationMetricsItemResponse {
+    pub service: String,
+    pub operation: String,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub error_rate_percent: f64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OperationMetricsResponse {
+    pub items: Vec<OperationMetricsItemResponse>,
 }
 
 impl From<ServiceMetricsView> for ServiceMetricsItemResponse {
@@ -423,6 +447,31 @@ impl From<EventListItemView> for EventListItemResponse {
             } else {
                 None
             },
+        }
+    }
+}
+
+impl From<OperationMetricsView> for OperationMetricsItemResponse {
+    fn from(value: OperationMetricsView) -> Self {
+        let error_rate_percent = if value.total_requests == 0 {
+            0.0
+        } else {
+            (value.total_errors as f64 / value.total_requests as f64) * 100.0
+        };
+
+        Self {
+            service: value.service,
+            operation: value.operation,
+            total_events: value.total_events,
+            total_requests: value.total_requests,
+            total_errors: value.total_errors,
+            error_rate_percent,
+            avg_duration_ms: value.avg_duration_ms,
+            total_retries: value.total_retries,
+            total_circuit_breaker_open: value.total_circuit_breaker_open,
+            total_idempotency_replays: value.total_idempotency_replays,
+            total_idempotency_in_progress: value.total_idempotency_in_progress,
+            total_idempotency_conflicts: value.total_idempotency_conflicts,
         }
     }
 }
