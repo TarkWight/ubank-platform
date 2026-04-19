@@ -89,32 +89,32 @@ impl EventsRepository for PostgresEventsRepository {
     async fn get_trace_events(&self, trace_id: &str) -> AppResult<Vec<TraceEventView>> {
         let rows = sqlx::query(
             r#"
-            select
-                id,
-                trace_id,
-                event_type,
-                event_timestamp,
-                service,
-                operation,
-                span_id,
-                parent_span_id,
-                method,
-                path,
-                status,
-                duration_ms,
-                success,
-                attempt,
-                error_code,
-                error_type,
-                error_message
-            from monitoring_events
-            where trace_id = $1
-            order by event_timestamp asc, id asc
-            "#,
+        select
+            id,
+            trace_id,
+            event_type,
+            event_timestamp,
+            service,
+            operation,
+            span_id,
+            parent_span_id,
+            method,
+            path,
+            status,
+            duration_ms,
+            success,
+            attempt,
+            error_code,
+            error_type,
+            error_message
+        from monitoring_events
+        where trace_id = $1
+        order by event_timestamp asc, id asc
+        "#,
         )
-        .bind(trace_id)
-        .fetch_all(&self.pool)
-        .await?;
+            .bind(trace_id)
+            .fetch_all(&self.pool)
+            .await?;
 
         Ok(rows
             .into_iter()
@@ -122,7 +122,7 @@ impl EventsRepository for PostgresEventsRepository {
                 id: row.get("id"),
                 trace_id: row.get("trace_id"),
                 event_type: row.get("event_type"),
-                event_timestamp: row.get::<OffsetDateTime, _>("event_timestamp"),
+                event_timestamp: row.get("event_timestamp"),
                 service: row.get("service"),
                 operation: row.get("operation"),
                 span_id: row.get("span_id"),
