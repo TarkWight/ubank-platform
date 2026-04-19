@@ -14,6 +14,7 @@ pub struct AppConfig {
     pub rabbitmq_routing_key: String,
     pub rabbitmq_dlq_routing_key: String,
     pub consumer_tag: String,
+    pub max_batch_size: usize,
 }
 
 impl AppConfig {
@@ -24,13 +25,24 @@ impl AppConfig {
             cors_allow_origin: env::var("CORS_ALLOW_ORIGIN").unwrap_or_else(|_| "*".to_string()),
             postgres_url: env::var("POSTGRES_URL").expect("POSTGRES_URL is required"),
             rabbitmq_url: env::var("RABBITMQ_URL").expect("RABBITMQ_URL is required"),
-            rabbitmq_exchange: env::var("RABBITMQ_EXCHANGE").unwrap_or_else(|_| "monitoring.exchange".to_string()),
-            rabbitmq_queue: env::var("RABBITMQ_QUEUE").unwrap_or_else(|_| "monitoring.queue".to_string()),
-            rabbitmq_dlx: env::var("RABBITMQ_DLX").unwrap_or_else(|_| "monitoring.dlx".to_string()),
-            rabbitmq_dlq: env::var("RABBITMQ_DLQ").unwrap_or_else(|_| "monitoring.queue.dlq".to_string()),
-            rabbitmq_routing_key: env::var("RABBITMQ_ROUTING_KEY").unwrap_or_else(|_| "monitoring.event".to_string()),
-            rabbitmq_dlq_routing_key: env::var("RABBITMQ_DLQ_ROUTING_KEY").unwrap_or_else(|_| "monitoring.dead".to_string()),
-            consumer_tag: env::var("CONSUMER_TAG").unwrap_or_else(|_| "monitoring-service-consumer".to_string()),
+            rabbitmq_exchange: env::var("RABBITMQ_EXCHANGE")
+                .unwrap_or_else(|_| "monitoring.exchange".to_string()),
+            rabbitmq_queue: env::var("RABBITMQ_QUEUE")
+                .unwrap_or_else(|_| "monitoring.queue".to_string()),
+            rabbitmq_dlx: env::var("RABBITMQ_DLX")
+                .unwrap_or_else(|_| "monitoring.dlx".to_string()),
+            rabbitmq_dlq: env::var("RABBITMQ_DLQ")
+                .unwrap_or_else(|_| "monitoring.queue.dlq".to_string()),
+            rabbitmq_routing_key: env::var("RABBITMQ_ROUTING_KEY")
+                .unwrap_or_else(|_| "monitoring.event".to_string()),
+            rabbitmq_dlq_routing_key: env::var("RABBITMQ_DLQ_ROUTING_KEY")
+                .unwrap_or_else(|_| "monitoring.dead".to_string()),
+            consumer_tag: env::var("CONSUMER_TAG")
+                .unwrap_or_else(|_| "monitoring-service-consumer".to_string()),
+            max_batch_size: env::var("MAX_BATCH_SIZE")
+                .ok()
+                .and_then(|x| x.parse::<usize>().ok())
+                .unwrap_or(100),
         }
     }
 }

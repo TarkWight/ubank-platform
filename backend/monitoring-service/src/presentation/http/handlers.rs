@@ -56,6 +56,13 @@ pub async fn ingest_events_batch(
         return Err(AppError::validation("events batch must not be empty"));
     }
 
+    if request.events.len() > state.config.max_batch_size {
+        return Err(AppError::validation(format!(
+            "events batch size must be <= {}",
+            state.config.max_batch_size
+        )));
+    }
+
     let mut accepted_count = 0usize;
     let mut errors = Vec::new();
 

@@ -66,18 +66,31 @@ pub struct MonitoringEvent {
 
 impl MonitoringEvent {
     pub fn validate(&self) -> Result<(), String> {
-        if self.trace_id.trim().is_empty() {
-            return Err("traceId is empty".to_string());
-        }
+        validate_required("traceId", &self.trace_id, 128)?;
+        validate_required("service", &self.service, 64)?;
 
-        if self.service.trim().is_empty() {
-            return Err("service is empty".to_string());
+        if let Some(idempotency_key) = &self.idempotency_key {
+            validate_optional("idempotencyKey", idempotency_key, 128)?;
         }
 
         if let Some(operation) = &self.operation {
-            if operation.trim().is_empty() {
-                return Err("operation must not be blank".to_string());
-            }
+            validate_optional("operation", operation, 128)?;
+        }
+
+        if let Some(span_id) = &self.span_id {
+            validate_optional("spanId", span_id, 128)?;
+        }
+
+        if let Some(parent_span_id) = &self.parent_span_id {
+            validate_optional("parentSpanId", parent_span_id, 128)?;
+        }
+
+        if let Some(method) = &self.method {
+            validate_optional("method", method, 16)?;
+        }
+
+        if let Some(path) = &self.path {
+            validate_optional("path", path, 512)?;
         }
 
         if let Some(duration_ms) = self.duration_ms {
@@ -89,6 +102,18 @@ impl MonitoringEvent {
         if let Some(attempt) = self.attempt {
             if attempt <= 0 {
                 return Err("attempt must be > 0".to_string());
+            }
+        }
+
+        if let Some(error) = &self.error {
+            if let Some(code) = &error.code {
+                validate_optional("error.code", code, 128)?;
+            }
+            if let Some(error_type) = &error.error_type {
+                validate_optional("error.type", error_type, 128)?;
+            }
+            if let Some(message) = &error.message {
+                validate_optional("error.message", message, 1024)?;
             }
         }
 
@@ -129,4 +154,32 @@ impl MonitoringEvent {
 
         Ok(())
     }
+}
+
+fn validate_required(field: &str, value: &str, max_len: usize) -> Result<(), String> {
+    let trimmed = value.trim();
+
+    if trimmed.is_empty() {
+        return Err(format!("{field} is empty"));
+    }
+
+    if trimmed.len() > max_len {
+        return Err(format!("{field} length must be <= {max_len}"));
+    }
+
+    Ok(())
+}
+
+fn validate_optional(field: &str, value: &str, max_len: usize) -> Result<(), String> {
+    let trimmed = value.trim();
+
+    if trimmed.is_empty() {
+        return Err(format!("{field} must not be blank"));
+    }
+
+    if trimmed.len() > max_len {
+        return Err(format!("{field} length must be <= {max_len}"));
+    }
+
+    Ok(())
 }
