@@ -9,8 +9,10 @@ use crate::{
     application::{
         ports::events_repository::EventsRepository,
         queries::{
+            get_idempotency_query::GetIdempotencyQuery,
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_query::GetTraceQuery,
+            get_trace_list_query::GetTraceListQuery,
         },
         services::ingest_event_service::IngestEventService,
     },
@@ -42,6 +44,8 @@ pub async fn run() -> AppResult<()> {
 
     let ingest_event_service = IngestEventService::new(repository.clone());
     let get_trace_query = GetTraceQuery::new(repository.clone());
+    let get_trace_list_query = GetTraceListQuery::new(repository.clone());
+    let get_idempotency_query = GetIdempotencyQuery::new(repository.clone());
     let get_overview_metrics_query = GetOverviewMetricsQuery::new(repository.clone());
 
     let consumer = RabbitMqConsumer::new(config.clone(), ingest_event_service.clone());
@@ -55,11 +59,14 @@ pub async fn run() -> AppResult<()> {
         config: config.clone(),
         repository,
         get_trace_query,
+        get_trace_list_query,
+        get_idempotency_query,
         get_overview_metrics_query,
     };
 
     let app = create_router(http_state);
-    let listener = TcpListener::bind(&config.http_addr).await
+    let listener = TcpListener::bind(&config.http_addr)
+        .await
         .map_err(|e| AppError::infrastructure(e.to_string()))?;
 
     info!(addr = %config.http_addr, app = %config.app_name, "http server started");
