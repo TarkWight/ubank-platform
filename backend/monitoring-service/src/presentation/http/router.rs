@@ -26,6 +26,7 @@ pub fn create_router(state: HttpState) -> Router {
         .route("/health/live", get(handlers::live))
         .route("/health/ready", get(handlers::ready))
         .route("/api/v1/events/batch", post(handlers::ingest_events_batch))
+        .route("/api/v1/events", get(handlers::get_event_list))
         .route("/api/v1/traces", get(handlers::get_trace_list))
         .route("/api/v1/traces/{trace_id}", get(handlers::get_trace))
         .route("/api/v1/idempotency/{idempotency_key}", get(handlers::get_idempotency))

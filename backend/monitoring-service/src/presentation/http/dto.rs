@@ -5,6 +5,7 @@ use time::OffsetDateTime;
 
 use crate::domain::monitoring_event::MonitoringEvent;
 use crate::application::ports::events_repository::{
+    EventListItemView,
     IdempotencyEventView,
     OverviewMetrics,
     TraceEventView,
@@ -85,6 +86,35 @@ pub struct IdempotencyResponse {
     pub event_count: usize,
     pub trace_ids: Vec<String>,
     pub events: Vec<IdempotencyEventResponse>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventListItemResponse {
+    pub id: i64,
+    pub trace_id: String,
+    pub idempotency_key: Option<String>,
+    pub timestamp: String,
+    pub service: String,
+    pub operation: Option<String>,
+    pub event_type: String,
+    pub span_id: Option<String>,
+    pub parent_span_id: Option<String>,
+    pub method: Option<String>,
+    pub path: Option<String>,
+    pub status: Option<i32>,
+    pub duration_ms: Option<i64>,
+    pub success: Option<bool>,
+    pub attempt: Option<i32>,
+    pub error: Option<TraceErrorResponse>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventListResponse {
+    pub items: Vec<EventListItemResponse>,
+    pub limit: i64,
+    pub offset: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -315,4 +345,38 @@ pub struct IngestEventsBatchResponse {
     pub accepted_count: usize,
     pub rejected_count: usize,
     pub errors: Vec<BatchItemErrorResponse>,
+}
+
+impl From<EventListItemView> for EventListItemResponse {
+    fn from(value: EventListItemView) -> Self {
+        Self {
+            id: value.id,
+            trace_id: value.trace_id,
+            idempotency_key: value.idempotency_key,
+            timestamp: format_rfc3339(value.event_timestamp),
+            service: value.service,
+            operation: value.operation,
+            event_type: value.event_type,
+            span_id: value.span_id,
+            parent_span_id: value.parent_span_id,
+            method: value.method,
+            path: value.path,
+            status: value.status,
+            duration_ms: value.duration_ms,
+            success: value.success,
+            attempt: value.attempt,
+            error: if value.error_code.is_some()
+                || value.error_type.is_some()
+                || value.error_message.is_some()
+            {
+                Some(TraceErrorResponse {
+                    code: value.error_code,
+                    error_type: value.error_type,
+                    message: value.error_message,
+                })
+            } else {
+                None
+            },
+        }
+    }
 }

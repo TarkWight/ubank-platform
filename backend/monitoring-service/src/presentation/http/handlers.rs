@@ -16,6 +16,7 @@ use crate::{
             OverviewMetricsResponse,
             TraceListResponse,
             TraceResponse,
+            EventListResponse,
         },
         state::HttpState,
     },
@@ -24,6 +25,20 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 pub struct TraceListQueryParams {
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EventListQueryParams {
+    pub service: Option<String>,
+    pub event_type: Option<String>,
+    pub trace_id: Option<String>,
+    pub idempotency_key: Option<String>,
+    pub operation: Option<String>,
+    pub from: Option<String>,
+    pub to: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
 }
@@ -161,4 +176,61 @@ pub async fn get_overview_metrics(
 ) -> AppResult<Json<OverviewMetricsResponse>> {
     let metrics = state.get_overview_metrics_query.execute().await?;
     Ok(Json(metrics.into()))
+}
+
+pub async fn get_event_list(
+    State(state): State<HttpState>,
+    Query(params): Query<EventListQueryParams>,
+) -> AppResult<Json<EventListResponse>> {
+    let from = parse_optional_rfc3339(params.from.as_deref(), "from")?;
+    let to = parse_optional_rfc3339(params.to.as_deref(), "to")?;
+
+    let limit = params.limit.unwrap_or(50);
+    let offset = params.offset.unwrap_or(0);
+
+    let items = state
+        .get_event_list_query
+        .execute(crate::application::queries::get_event_list_query::GetEventListInput {
+            service: params.service,
+            event_type: params.event_type,
+            trace_id: params.trace_id,
+            idempotency_key: params.idempotency_key,
+            operation: params.operation,
+            from,
+            to,
+            limit: Some(limit),
+            offset: Some(offset),
+        })
+        .await?;
+
+    Ok(Json(EventListResponse {
+        items: items.into_iter().map(Into::into).collect(),
+        limit,
+        offset,
+    }))
+}
+
+fn parse_optional_rfc3339(
+    value: Option<&str>,
+    field_name: &str,
+) -> AppResult<Option<time::OffsetDateTime>> {
+    match value {
+        Some(raw) => {
+            let trimmed = raw.trim();
+            if trimmed.is_empty() {
+                return Ok(None);
+            }
+
+            let parsed = time::OffsetDateTime::parse(
+                trimmed,
+                &time::format_description::well_known::Rfc3339,
+            )
+                .map_err(|_| AppError::validation(format!(
+                    "{field_name} must be a valid RFC3339 datetime"
+                )))?;
+
+            Ok(Some(parsed))
+        }
+        None => Ok(None),
+    }
 }

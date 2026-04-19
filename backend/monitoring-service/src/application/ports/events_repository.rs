@@ -53,6 +53,41 @@ pub struct IdempotencyEventView {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct EventListItemView {
+    pub id: i64,
+    pub trace_id: String,
+    pub idempotency_key: Option<String>,
+    pub event_type: String,
+    pub event_timestamp: OffsetDateTime,
+    pub service: String,
+    pub operation: Option<String>,
+    pub span_id: Option<String>,
+    pub parent_span_id: Option<String>,
+    pub method: Option<String>,
+    pub path: Option<String>,
+    pub status: Option<i32>,
+    pub duration_ms: Option<i64>,
+    pub success: Option<bool>,
+    pub attempt: Option<i32>,
+    pub error_code: Option<String>,
+    pub error_type: Option<String>,
+    pub error_message: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct EventListQuery {
+    pub service: Option<String>,
+    pub event_type: Option<String>,
+    pub trace_id: Option<String>,
+    pub idempotency_key: Option<String>,
+    pub operation: Option<String>,
+    pub from: Option<OffsetDateTime>,
+    pub to: Option<OffsetDateTime>,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct OverviewMetrics {
     pub total_events: i64,
     pub total_requests: i64,
@@ -60,7 +95,6 @@ pub struct OverviewMetrics {
     pub avg_duration_ms: Option<f64>,
     pub total_retries: i64,
     pub total_circuit_breaker_open: i64,
-
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
@@ -95,6 +129,11 @@ pub trait EventsRepository: Send + Sync {
         &self,
         idempotency_key: &str,
     ) -> AppResult<Vec<IdempotencyEventView>>;
+
+    async fn get_event_list(
+        &self,
+        query: EventListQuery,
+    ) -> AppResult<Vec<EventListItemView>>;
 
     async fn get_trace_list(
         &self,

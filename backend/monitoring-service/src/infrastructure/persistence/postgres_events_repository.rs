@@ -4,6 +4,8 @@ use sqlx::{postgres::PgPool, Row};
 
 use crate::{
     application::ports::events_repository::{
+        EventListItemView,
+        EventListQuery,
         EventsRepository,
         IdempotencyEventView,
         OverviewMetrics,
@@ -242,6 +244,77 @@ impl EventsRepository for PostgresEventsRepository {
             .collect())
     }
 
+    async fn get_event_list(&self, query: EventListQuery) -> AppResult<Vec<EventListItemView>> {
+        let rows = sqlx::query(
+            r#"
+            select
+                id,
+                trace_id,
+                idempotency_key,
+                event_type,
+                event_timestamp,
+                service,
+                operation,
+                span_id,
+                parent_span_id,
+                method,
+                path,
+                status,
+                duration_ms,
+                success,
+                attempt,
+                error_code,
+                error_type,
+                error_message
+            from monitoring_events
+            where ($1::varchar is null or service = $1)
+              and ($2::varchar is null or event_type = $2)
+              and ($3::varchar is null or trace_id = $3)
+              and ($4::varchar is null or idempotency_key = $4)
+              and ($5::varchar is null or operation = $5)
+              and ($6::timestamptz is null or event_timestamp >= $6)
+              and ($7::timestamptz is null or event_timestamp <= $7)
+            order by event_timestamp desc, id desc
+            limit $8 offset $9
+            "#,
+        )
+            .bind(query.service)
+            .bind(query.event_type)
+            .bind(query.trace_id)
+            .bind(query.idempotency_key)
+            .bind(query.operation)
+            .bind(query.from)
+            .bind(query.to)
+            .bind(query.limit)
+            .bind(query.offset)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| EventListItemView {
+                id: row.get("id"),
+                trace_id: row.get("trace_id"),
+                idempotency_key: row.get("idempotency_key"),
+                event_type: row.get("event_type"),
+                event_timestamp: row.get("event_timestamp"),
+                service: row.get("service"),
+                operation: row.get("operation"),
+                span_id: row.get("span_id"),
+                parent_span_id: row.get("parent_span_id"),
+                method: row.get("method"),
+                path: row.get("path"),
+                status: row.get("status"),
+                duration_ms: row.get("duration_ms"),
+                success: row.get("success"),
+                attempt: row.get("attempt"),
+                error_code: row.get("error_code"),
+                error_type: row.get("error_type"),
+                error_message: row.get("error_message"),
+            })
+            .collect())
+    }
+    
     async fn get_overview_metrics(&self) -> AppResult<OverviewMetrics> {
         let row = sqlx::query(
             r#"
