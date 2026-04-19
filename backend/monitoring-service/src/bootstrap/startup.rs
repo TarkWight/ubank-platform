@@ -9,8 +9,13 @@ use crate::{
     application::{
         ports::events_repository::EventsRepository,
         queries::{
+            get_event_list_query::GetEventListQuery,
+            get_idempotency_query::GetIdempotencyQuery,
+            get_metrics_by_operation_query::GetMetricsByOperationQuery,
+            get_metrics_by_service_query::GetMetricsByServiceQuery,
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_query::GetTraceQuery,
+            get_trace_list_query::GetTraceListQuery,
         },
         services::ingest_event_service::IngestEventService,
     },
@@ -42,7 +47,12 @@ pub async fn run() -> AppResult<()> {
 
     let ingest_event_service = IngestEventService::new(repository.clone());
     let get_trace_query = GetTraceQuery::new(repository.clone());
+    let get_trace_list_query = GetTraceListQuery::new(repository.clone());
+    let get_idempotency_query = GetIdempotencyQuery::new(repository.clone());
     let get_overview_metrics_query = GetOverviewMetricsQuery::new(repository.clone());
+    let get_event_list_query = GetEventListQuery::new(repository.clone());
+    let get_metrics_by_service_query = GetMetricsByServiceQuery::new(repository.clone());
+    let get_metrics_by_operation_query = GetMetricsByOperationQuery::new(repository.clone());
 
     let consumer = RabbitMqConsumer::new(config.clone(), ingest_event_service.clone());
     tokio::spawn(async move {
@@ -54,12 +64,19 @@ pub async fn run() -> AppResult<()> {
     let http_state = HttpState {
         config: config.clone(),
         repository,
+        ingest_event_service,
+        get_event_list_query,
         get_trace_query,
+        get_trace_list_query,
+        get_idempotency_query,
         get_overview_metrics_query,
+        get_metrics_by_service_query,
+        get_metrics_by_operation_query,
     };
 
     let app = create_router(http_state);
-    let listener = TcpListener::bind(&config.http_addr).await
+    let listener = TcpListener::bind(&config.http_addr)
+        .await
         .map_err(|e| AppError::infrastructure(e.to_string()))?;
 
     info!(addr = %config.http_addr, app = %config.app_name, "http server started");
