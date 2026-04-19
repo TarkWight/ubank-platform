@@ -58,6 +58,7 @@ pub async fn run() -> AppResult<()> {
     let http_state = HttpState {
         config: config.clone(),
         repository,
+        ingest_event_service,
         get_trace_query,
         get_trace_list_query,
         get_idempotency_query,

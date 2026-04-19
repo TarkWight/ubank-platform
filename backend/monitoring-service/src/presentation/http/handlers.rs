@@ -3,12 +3,16 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
+use serde_json::to_value;
 
 use crate::{
     presentation::http::{
         dto::{
+            BatchItemErrorResponse,
             HealthResponse,
             IdempotencyResponse,
+            IngestEventsBatchRequest,
+            IngestEventsBatchResponse,
             OverviewMetricsResponse,
             TraceListResponse,
             TraceResponse,
@@ -41,6 +45,55 @@ pub async fn ready(
     Ok(Json(HealthResponse {
         status: "OK",
         service: state.config.app_name.clone(),
+    }))
+}
+
+pub async fn ingest_events_batch(
+    State(state): State<HttpState>,
+    Json(request): Json<IngestEventsBatchRequest>,
+) -> AppResult<Json<IngestEventsBatchResponse>> {
+    if request.events.is_empty() {
+        return Err(AppError::validation("events batch must not be empty"));
+    }
+
+    let mut accepted_count = 0usize;
+    let mut errors = Vec::new();
+
+    for (index, event) in request.events.into_iter().enumerate() {
+        let raw_payload = match to_value(&event) {
+            Ok(value) => value,
+            Err(err) => {
+                errors.push(BatchItemErrorResponse {
+                    index,
+                    message: format!("failed to serialize event to raw payload: {err}"),
+                });
+                continue;
+            }
+        };
+
+        match state
+            .ingest_event_service
+            .ingest(&event, &raw_payload)
+            .await
+        {
+            Ok(()) => {
+                accepted_count += 1;
+            }
+            Err(err) => {
+                errors.push(BatchItemErrorResponse {
+                    index,
+                    message: err.to_string(),
+                });
+            }
+        }
+    }
+
+    let rejected_count = errors.len();
+
+    Ok(Json(IngestEventsBatchResponse {
+        accepted_count,
+        rejected_count,
+        errors,
     }))
 }
 

@@ -1,8 +1,9 @@
 use std::collections::BTreeSet;
 
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use time::OffsetDateTime;
 
+use crate::domain::monitoring_event::MonitoringEvent;
 use crate::application::ports::events_repository::{
     IdempotencyEventView,
     OverviewMetrics,
@@ -293,4 +294,25 @@ for TraceListItemResponse
             has_error: value.has_error,
         }
     }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngestEventsBatchRequest {
+    pub events: Vec<MonitoringEvent>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchItemErrorResponse {
+    pub index: usize,
+    pub message: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngestEventsBatchResponse {
+    pub accepted_count: usize,
+    pub rejected_count: usize,
+    pub errors: Vec<BatchItemErrorResponse>,
 }
