@@ -31,6 +31,7 @@ pub fn create_router(state: HttpState) -> Router {
         .route("/api/v1/traces/{trace_id}", get(handlers::get_trace))
         .route("/api/v1/idempotency/{idempotency_key}", get(handlers::get_idempotency))
         .route("/api/v1/metrics/overview", get(handlers::get_overview_metrics))
+        .route("/api/v1/metrics/by-service", get(handlers::get_metrics_by_service))
         .with_state(state)
         .layer(TraceLayer::new_for_http())
         .layer(cors)

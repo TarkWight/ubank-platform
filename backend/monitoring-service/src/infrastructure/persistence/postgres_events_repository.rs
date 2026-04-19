@@ -9,6 +9,7 @@ use crate::{
         EventsRepository,
         IdempotencyEventView,
         OverviewMetrics,
+        ServiceMetricsView,
         TraceEventView,
         TraceListItemView,
     },
@@ -314,7 +315,7 @@ impl EventsRepository for PostgresEventsRepository {
             })
             .collect())
     }
-    
+
     async fn get_overview_metrics(&self) -> AppResult<OverviewMetrics> {
         let row = sqlx::query(
             r#"
@@ -345,5 +346,44 @@ impl EventsRepository for PostgresEventsRepository {
             total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
             total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
         })
+    }
+
+    async fn get_metrics_by_service(&self) -> AppResult<Vec<ServiceMetricsView>> {
+        let rows = sqlx::query(
+            r#"
+            select
+                service,
+                count(*)::bigint as total_events,
+                count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
+                count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+                avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
+                count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
+                count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
+                count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
+                count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+            from monitoring_events
+            group by service
+            order by service asc
+            "#,
+        )
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| ServiceMetricsView {
+                service: row.get("service"),
+                total_events: row.get("total_events"),
+                total_requests: row.get("total_requests"),
+                total_errors: row.get("total_errors"),
+                avg_duration_ms: row.get("avg_duration_ms"),
+                total_retries: row.get("total_retries"),
+                total_circuit_breaker_open: row.get("total_circuit_breaker_open"),
+                total_idempotency_replays: row.get("total_idempotency_replays"),
+                total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
+                total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+            })
+            .collect())
     }
 }

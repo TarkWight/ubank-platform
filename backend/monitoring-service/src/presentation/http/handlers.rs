@@ -17,6 +17,7 @@ use crate::{
             TraceListResponse,
             TraceResponse,
             EventListResponse,
+            ServiceMetricsResponse,
         },
         state::HttpState,
     },
@@ -176,6 +177,16 @@ pub async fn get_overview_metrics(
 ) -> AppResult<Json<OverviewMetricsResponse>> {
     let metrics = state.get_overview_metrics_query.execute().await?;
     Ok(Json(metrics.into()))
+}
+
+pub async fn get_metrics_by_service(
+    State(state): State<HttpState>,
+) -> AppResult<Json<ServiceMetricsResponse>> {
+    let items = state.get_metrics_by_service_query.execute().await?;
+
+    Ok(Json(ServiceMetricsResponse {
+        items: items.into_iter().map(Into::into).collect(),
+    }))
 }
 
 pub async fn get_event_list(

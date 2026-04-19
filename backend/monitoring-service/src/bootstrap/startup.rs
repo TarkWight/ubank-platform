@@ -11,6 +11,7 @@ use crate::{
         queries::{
             get_event_list_query::GetEventListQuery,
             get_idempotency_query::GetIdempotencyQuery,
+            get_metrics_by_service_query::GetMetricsByServiceQuery,
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_query::GetTraceQuery,
             get_trace_list_query::GetTraceListQuery,
@@ -49,6 +50,7 @@ pub async fn run() -> AppResult<()> {
     let get_idempotency_query = GetIdempotencyQuery::new(repository.clone());
     let get_overview_metrics_query = GetOverviewMetricsQuery::new(repository.clone());
     let get_event_list_query = GetEventListQuery::new(repository.clone());
+    let get_metrics_by_service_query = GetMetricsByServiceQuery::new(repository.clone());
 
     let consumer = RabbitMqConsumer::new(config.clone(), ingest_event_service.clone());
     tokio::spawn(async move {
@@ -66,6 +68,7 @@ pub async fn run() -> AppResult<()> {
         get_trace_list_query,
         get_idempotency_query,
         get_overview_metrics_query,
+        get_metrics_by_service_query,
     };
 
     let app = create_router(http_state);

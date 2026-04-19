@@ -8,6 +8,7 @@ use crate::application::ports::events_repository::{
     EventListItemView,
     IdempotencyEventView,
     OverviewMetrics,
+    ServiceMetricsView,
     TraceEventView,
 };
 
@@ -133,6 +134,51 @@ pub struct OverviewMetricsResponse {
     pub total_idempotency_conflicts: i64,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceMetricsItemResponse {
+    pub service: String,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub error_rate_percent: f64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ServiceMetricsResponse {
+    pub items: Vec<ServiceMetricsItemResponse>,
+}
+
+impl From<ServiceMetricsView> for ServiceMetricsItemResponse {
+    fn from(value: ServiceMetricsView) -> Self {
+        let error_rate_percent = if value.total_requests == 0 {
+            0.0
+        } else {
+            (value.total_errors as f64 / value.total_requests as f64) * 100.0
+        };
+
+        Self {
+            service: value.service,
+            total_events: value.total_events,
+            total_requests: value.total_requests,
+            total_errors: value.total_errors,
+            error_rate_percent,
+            avg_duration_ms: value.avg_duration_ms,
+            total_retries: value.total_retries,
+            total_circuit_breaker_open: value.total_circuit_breaker_open,
+            total_idempotency_replays: value.total_idempotency_replays,
+            total_idempotency_in_progress: value.total_idempotency_in_progress,
+            total_idempotency_conflicts: value.total_idempotency_conflicts,
+        }
+    }
+}
 impl From<OverviewMetrics> for OverviewMetricsResponse {
     fn from(value: OverviewMetrics) -> Self {
         let error_rate_percent = if value.total_requests == 0 {
