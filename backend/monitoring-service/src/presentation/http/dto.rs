@@ -11,6 +11,7 @@ use crate::application::ports::events_repository::{
     OverviewMetrics,
     ServiceMetricsView,
     TraceEventView,
+    MetricsTimeseriesPointView,
 };
 
 #[derive(Debug, Serialize)]
@@ -36,6 +37,7 @@ pub struct TraceEventResponse {
     pub idempotency_key: Option<String>,
     pub timestamp: String,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub event_type: String,
     pub span_id: Option<String>,
@@ -68,6 +70,7 @@ pub struct IdempotencyEventResponse {
     pub idempotency_key: String,
     pub timestamp: String,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub event_type: String,
     pub span_id: Option<String>,
@@ -98,6 +101,7 @@ pub struct EventListItemResponse {
     pub idempotency_key: Option<String>,
     pub timestamp: String,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub event_type: String,
     pub span_id: Option<String>,
@@ -234,6 +238,7 @@ impl From<TraceEventView> for TraceEventResponse {
             idempotency_key: value.idempotency_key,
             timestamp: format_rfc3339(value.event_timestamp),
             service: value.service,
+            transport: value.transport,
             operation: value.operation,
             event_type: value.event_type,
             span_id: value.span_id,
@@ -268,6 +273,7 @@ impl From<IdempotencyEventView> for IdempotencyEventResponse {
             idempotency_key: value.idempotency_key,
             timestamp: format_rfc3339(value.event_timestamp),
             service: value.service,
+            transport: value.transport,
             operation: value.operation,
             event_type: value.event_type,
             span_id: value.span_id,
@@ -425,6 +431,7 @@ impl From<EventListItemView> for EventListItemResponse {
             idempotency_key: value.idempotency_key,
             timestamp: format_rfc3339(value.event_timestamp),
             service: value.service,
+            transport: value.transport,
             operation: value.operation,
             event_type: value.event_type,
             span_id: value.span_id,
@@ -462,6 +469,52 @@ impl From<OperationMetricsView> for OperationMetricsItemResponse {
         Self {
             service: value.service,
             operation: value.operation,
+            total_events: value.total_events,
+            total_requests: value.total_requests,
+            total_errors: value.total_errors,
+            error_rate_percent,
+            avg_duration_ms: value.avg_duration_ms,
+            total_retries: value.total_retries,
+            total_circuit_breaker_open: value.total_circuit_breaker_open,
+            total_idempotency_replays: value.total_idempotency_replays,
+            total_idempotency_in_progress: value.total_idempotency_in_progress,
+            total_idempotency_conflicts: value.total_idempotency_conflicts,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetricsTimeseriesPointResponse {
+    pub bucket_start: String,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub error_rate_percent: f64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetricsTimeseriesResponse {
+    pub items: Vec<MetricsTimeseriesPointResponse>,
+}
+
+impl From<MetricsTimeseriesPointView> for MetricsTimeseriesPointResponse {
+    fn from(value: MetricsTimeseriesPointView) -> Self {
+        let error_rate_percent = if value.total_requests == 0 {
+            0.0
+        } else {
+            (value.total_errors as f64 / value.total_requests as f64) * 100.0
+        };
+
+        Self {
+            bucket_start: format_rfc3339(value.bucket_start),
             total_events: value.total_events,
             total_requests: value.total_requests,
             total_errors: value.total_errors,

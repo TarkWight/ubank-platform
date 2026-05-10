@@ -16,6 +16,7 @@ pub struct TraceEventView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -28,6 +29,7 @@ pub struct TraceEventView {
     pub error_code: Option<String>,
     pub error_type: Option<String>,
     pub error_message: Option<String>,
+
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -38,6 +40,7 @@ pub struct IdempotencyEventView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -60,6 +63,7 @@ pub struct EventListItemView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -81,6 +85,7 @@ pub struct EventListQuery {
     pub trace_id: Option<String>,
     pub idempotency_key: Option<String>,
     pub operation: Option<String>,
+    pub transport: Option<String>,
     pub from: Option<OffsetDateTime>,
     pub to: Option<OffsetDateTime>,
     pub limit: i64,
@@ -139,6 +144,33 @@ pub struct OperationMetricsView {
     pub total_idempotency_conflicts: i64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct MetricsTimeseriesPointView {
+    pub bucket_start: OffsetDateTime,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
+#[derive(Debug, Clone)]
+pub enum MetricsBucket {
+    Minute,
+    Hour,
+}
+
+#[derive(Debug, Clone)]
+pub struct MetricsTimeseriesQuery {
+    pub bucket: MetricsBucket,
+    pub from: Option<OffsetDateTime>,
+    pub to: Option<OffsetDateTime>,
+}
+
 #[async_trait]
 pub trait EventsRepository: Send + Sync {
     async fn ping(&self) -> AppResult<()>;
@@ -175,4 +207,9 @@ pub trait EventsRepository: Send + Sync {
     async fn get_metrics_by_service(&self) -> AppResult<Vec<ServiceMetricsView>>;
 
     async fn get_metrics_by_operation(&self) -> AppResult<Vec<OperationMetricsView>>;
+
+    async fn get_metrics_timeseries(
+        &self,
+        query: MetricsTimeseriesQuery,
+    ) -> AppResult<Vec<MetricsTimeseriesPointView>>;
 }
