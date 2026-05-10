@@ -86,3 +86,19 @@ export type OperationMetricsItem = ServiceMetricsItem & {
 export type OperationMetricsResponse = {
   items: OperationMetricsItem[];
 };
+
+export type TraceResponse = {
+  traceId: string;
+  eventCount: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  durationMs: number | null;
+  events: EventItem[];
+};
+
+export type IdempotencyResponse = {
+  idempotencyKey: string;
+  eventCount: number;
+  traceIds: string[];
+  events: EventItem[];
+};
