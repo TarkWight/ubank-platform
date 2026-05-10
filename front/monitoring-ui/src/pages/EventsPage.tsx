@@ -13,6 +13,8 @@ export function EventsPage() {
   const [traceId, setTraceId] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [operation, setOperation] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [offset, setOffset] = useState(0);
@@ -31,6 +33,8 @@ export function EventsPage() {
         traceId,
         idempotencyKey,
         operation,
+        from: toRfc3339OrUndefined(from),
+        to: toRfc3339OrUndefined(to),
         limit,
         offset: nextOffset,
       });
@@ -45,6 +49,18 @@ export function EventsPage() {
 
   function searchFromStart() {
     void load(0);
+  }
+
+  function clearFilters() {
+    setService("");
+    setEventType("");
+    setTransport("");
+    setTraceId("");
+    setIdempotencyKey("");
+    setOperation("");
+    setFrom("");
+    setTo("");
+    setOffset(0);
   }
 
   function goPrevious() {
@@ -73,7 +89,12 @@ export function EventsPage() {
           </div>
         </div>
 
-        <button onClick={searchFromStart}>Search</button>
+        <div className="actions">
+          <button className="secondary-button" onClick={clearFilters}>
+            Clear
+          </button>
+          <button onClick={searchFromStart}>Search</button>
+        </div>
       </div>
 
       <div className="card filters">
@@ -113,6 +134,24 @@ export function EventsPage() {
           onChange={(e) => setOperation(e.target.value)}
         />
 
+        <label className="field-label">
+          <span>From</span>
+          <input
+            type="datetime-local"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+        </label>
+
+        <label className="field-label">
+          <span>To</span>
+          <input
+            type="datetime-local"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+          />
+        </label>
+
         <select
           value={limit}
           onChange={(e) => {
@@ -132,9 +171,7 @@ export function EventsPage() {
           Previous
         </button>
 
-        <span className="muted">
-          Page {Math.floor(offset / limit) + 1}
-        </span>
+        <span className="muted">Page {Math.floor(offset / limit) + 1}</span>
 
         <button disabled={!canGoNext} onClick={goNext}>
           Next
@@ -198,9 +235,7 @@ export function EventsPage() {
           Previous
         </button>
 
-        <span className="muted">
-          Page {Math.floor(offset / limit) + 1}
-        </span>
+        <span className="muted">Page {Math.floor(offset / limit) + 1}</span>
 
         <button disabled={!canGoNext} onClick={goNext}>
           Next
@@ -208,4 +243,12 @@ export function EventsPage() {
       </div>
     </section>
   );
+}
+
+function toRfc3339OrUndefined(value: string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return new Date(value).toISOString();
 }

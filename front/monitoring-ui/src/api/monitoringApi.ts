@@ -49,6 +49,8 @@ export const monitoringApi = {
     traceId?: string;
     idempotencyKey?: string;
     operation?: string;
+    from?: string;
+    to?: string;
     limit?: number;
     offset?: number;
   }): Promise<EventListResponse> {

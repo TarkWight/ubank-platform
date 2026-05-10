@@ -111,7 +111,7 @@ button {
 
 .filters {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 18px;
 }
@@ -244,4 +244,27 @@ th {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.secondary-button {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.field-label input {
+  width: 100%;
 }
