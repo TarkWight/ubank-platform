@@ -286,3 +286,20 @@ button:disabled {
   width: auto;
   min-width: 80px;
 }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(320px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.wide-chart {
+  grid-column: 1 / -1;
+}
+
+.chart-card h2 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 18px;
+}

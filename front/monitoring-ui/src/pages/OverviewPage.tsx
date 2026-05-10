@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import {
-  LineChart,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
 import { monitoringApi } from "../api/monitoringApi";
 import type { MetricsTimeseriesPoint, OverviewMetricsResponse } from "../api/types";
@@ -20,19 +24,26 @@ function MetricCard(props: { title: string; value: string | number }) {
   );
 }
 
+function formatTime(value: string): string {
+  return new Date(value).toLocaleTimeString();
+}
+
 export function OverviewPage() {
   const [overview, setOverview] = useState<OverviewMetricsResponse | null>(null);
   const [timeseries, setTimeseries] = useState<MetricsTimeseriesPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
+
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState(10000);
+  const [bucket, setBucket] = useState<"minute" | "hour">("minute");
 
   async function load() {
     try {
       setError(null);
+
       const [overviewData, timeseriesData] = await Promise.all([
         monitoringApi.getOverview(),
-        monitoringApi.getTimeseries("minute"),
+        monitoringApi.getTimeseries(bucket),
       ]);
 
       setOverview(overviewData);
@@ -44,19 +55,19 @@ export function OverviewPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [bucket]);
 
   useEffect(() => {
-  if (!autoRefresh) {
-    return;
-  }
+    if (!autoRefresh) {
+      return;
+    }
 
-  const timerId = window.setInterval(() => {
-    void load();
-  }, refreshIntervalMs);
+    const timerId = window.setInterval(() => {
+      void load();
+    }, refreshIntervalMs);
 
-  return () => window.clearInterval(timerId);
-}, [autoRefresh, refreshIntervalMs]);
+    return () => window.clearInterval(timerId);
+  }, [autoRefresh, refreshIntervalMs, bucket]);
 
   if (error) {
     return <div className="error-box">{error}</div>;
@@ -68,28 +79,41 @@ export function OverviewPage() {
 
   return (
     <section>
-      <div className="actions">
-  <label className="checkbox-control">
-    <input
-      type="checkbox"
-      checked={autoRefresh}
-      onChange={(e) => setAutoRefresh(e.target.checked)}
-    />
-    Auto refresh
-  </label>
+      <div className="page-header">
+        <h1>Overview</h1>
 
-  <select
-    className="compact-select"
-    value={refreshIntervalMs}
-    onChange={(e) => setRefreshIntervalMs(Number(e.target.value))}
-    disabled={!autoRefresh}
-  >
-    <option value={5000}>5s</option>
-    <option value={10000}>10s</option>
-  </select>
+        <div className="actions">
+          <select
+            className="compact-select"
+            value={bucket}
+            onChange={(e) => setBucket(e.target.value as "minute" | "hour")}
+          >
+            <option value="minute">Minute</option>
+            <option value="hour">Hour</option>
+          </select>
 
-  <button onClick={load}>Refresh</button>
-</div>
+          <label className="checkbox-control">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+            />
+            Auto refresh
+          </label>
+
+          <select
+            className="compact-select"
+            value={refreshIntervalMs}
+            onChange={(e) => setRefreshIntervalMs(Number(e.target.value))}
+            disabled={!autoRefresh}
+          >
+            <option value={5000}>5s</option>
+            <option value={10000}>10s</option>
+          </select>
+
+          <button onClick={load}>Refresh</button>
+        </div>
+      </div>
 
       <div className="metrics-grid">
         <MetricCard title="Total events" value={overview.totalEvents} />
@@ -102,17 +126,58 @@ export function OverviewPage() {
         <MetricCard title="Idempotency conflicts" value={overview.totalIdempotencyConflicts} />
       </div>
 
-      <div className="card chart-card">
-        <h2>Error rate over time</h2>
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={timeseries}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="bucketStart" hide />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="errorRatePercent" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="charts-grid">
+        <div className="card chart-card">
+          <h2>Error rate</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={timeseries}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="bucketStart" tickFormatter={formatTime} />
+              <YAxis />
+              <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleString()} />
+              <Line
+                type="monotone"
+                dataKey="errorRatePercent"
+                strokeWidth={2}
+                dot={false}
+                name="Error rate %"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card chart-card">
+          <h2>Average duration</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <AreaChart data={timeseries}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="bucketStart" tickFormatter={formatTime} />
+              <YAxis />
+              <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleString()} />
+              <Area
+                type="monotone"
+                dataKey="avgDurationMs"
+                strokeWidth={2}
+                fillOpacity={0.2}
+                name="Avg duration ms"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card chart-card wide-chart">
+          <h2>Retries / Circuit breaker</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={timeseries}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="bucketStart" tickFormatter={formatTime} />
+              <YAxis />
+              <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleString()} />
+              <Bar dataKey="totalRetries" name="Retries" />
+              <Bar dataKey="totalCircuitBreakerOpen" name="Circuit breaker open" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </section>
   );
