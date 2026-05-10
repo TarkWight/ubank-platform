@@ -1,44 +1,77 @@
-import { useState } from "react";
 import { Activity, BarChart3, ListTree } from "lucide-react";
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
+
 import { OverviewPage } from "./pages/OverviewPage";
 import { EventsPage } from "./pages/EventsPage";
 import { MetricsPage } from "./pages/MetricsPage";
+
+import { TracePage } from "./pages/TracePage";
+import { IdempotencyPage } from "./pages/IdempotencyPage";
+
 import "./App.css";
 
-type Page = "overview" | "events" | "metrics";
+function Sidebar() {
+  const location = useLocation();
 
-export default function App() {
-  const [page, setPage] = useState<Page>("overview");
+  function isActive(path: string): boolean {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+
+    return location.pathname.startsWith(path);
+  }
 
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <Activity size={24} />
-          <span>Monitoring</span>
-        </div>
+    <aside className="sidebar">
+      <div className="brand">
+        <Activity size={24} />
+        <span>Monitoring</span>
+      </div>
 
-        <button className={page === "overview" ? "active" : ""} onClick={() => setPage("overview")}>
-          <BarChart3 size={18} />
-          Overview
-        </button>
+      <Link to="/" className={isActive("/") ? "nav-link active" : "nav-link"}>
+        <BarChart3 size={18} />
+        Overview
+      </Link>
 
-        <button className={page === "events" ? "active" : ""} onClick={() => setPage("events")}>
-          <ListTree size={18} />
-          Events
-        </button>
+      <Link
+        to="/events"
+        className={isActive("/events") ? "nav-link active" : "nav-link"}
+      >
+        <ListTree size={18} />
+        Events
+      </Link>
 
-        <button className={page === "metrics" ? "active" : ""} onClick={() => setPage("metrics")}>
-          <BarChart3 size={18} />
-          Metrics
-        </button>
-      </aside>
+      <Link
+        to="/metrics"
+        className={isActive("/metrics") ? "nav-link active" : "nav-link"}
+      >
+        <BarChart3 size={18} />
+        Metrics
+      </Link>
+    </aside>
+  );
+}
 
-      <main className="content">
-        {page === "overview" && <OverviewPage />}
-        {page === "events" && <EventsPage />}
-        {page === "metrics" && <MetricsPage />}
-      </main>
-    </div>
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div className="app">
+        <Sidebar />
+
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<OverviewPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/metrics" element={<MetricsPage />} />
+
+            <Route path="/traces/:traceId" element={<TracePage />} />
+            <Route
+              path="/idempotency/:idempotencyKey"
+              element={<IdempotencyPage />}
+            />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   );
 }

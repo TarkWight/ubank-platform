@@ -1,9 +1,11 @@
 import type {
   EventListResponse,
+  IdempotencyResponse,
   MetricsTimeseriesResponse,
   OperationMetricsResponse,
   OverviewMetricsResponse,
   ServiceMetricsResponse,
+  TraceResponse,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_MONITORING_API_URL ?? "http://localhost:8080";
@@ -17,6 +19,18 @@ async function request<T>(path: string): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+function buildSearchParams(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      search.set(key, String(value));
+    }
+  });
+
+  return search.toString();
 }
 
 export const monitoringApi = {
@@ -38,15 +52,16 @@ export const monitoringApi = {
     limit?: number;
     offset?: number;
   }): Promise<EventListResponse> {
-    const search = new URLSearchParams();
+    const search = buildSearchParams(params);
+    return request(`/api/v1/events?${search}`);
+  },
 
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && String(value).trim() !== "") {
-        search.set(key, String(value));
-      }
-    });
+  getTrace(traceId: string): Promise<TraceResponse> {
+    return request(`/api/v1/traces/${encodeURIComponent(traceId)}`);
+  },
 
-    return request(`/api/v1/events?${search.toString()}`);
+  getIdempotency(idempotencyKey: string): Promise<IdempotencyResponse> {
+    return request(`/api/v1/idempotency/${encodeURIComponent(idempotencyKey)}`);
   },
 
   getMetricsByService(): Promise<ServiceMetricsResponse> {
