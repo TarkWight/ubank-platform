@@ -33,6 +33,7 @@ pub fn create_router(state: HttpState) -> Router {
         .route("/api/v1/metrics/overview", get(handlers::get_overview_metrics))
         .route("/api/v1/metrics/by-service", get(handlers::get_metrics_by_service))
         .route("/api/v1/metrics/by-operation", get(handlers::get_metrics_by_operation))
+        .route("/api/v1/metrics/timeseries", get(handlers::get_metrics_timeseries))
         .with_state(state)
         .layer(TraceLayer::new_for_http())
         .layer(cors)

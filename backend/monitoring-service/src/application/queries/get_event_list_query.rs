@@ -23,6 +23,7 @@ pub struct GetEventListInput {
     pub trace_id: Option<String>,
     pub idempotency_key: Option<String>,
     pub operation: Option<String>,
+    pub transport: Option<String>,
     pub from: Option<OffsetDateTime>,
     pub to: Option<OffsetDateTime>,
     pub limit: Option<i64>,
@@ -66,6 +67,7 @@ impl GetEventListQuery {
                 trace_id: normalize(input.trace_id),
                 idempotency_key: normalize(input.idempotency_key),
                 operation: normalize(input.operation),
+                transport: normalize_transport(input.transport)?,
                 from: input.from,
                 to: input.to,
                 limit,
@@ -84,4 +86,22 @@ fn normalize(value: Option<String>) -> Option<String> {
             Some(trimmed)
         }
     })
+}
+
+fn normalize_transport(value: Option<String>) -> AppResult<Option<String>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+
+    let normalized = value.trim().to_uppercase();
+
+    if normalized.is_empty() {
+        return Ok(None);
+    }
+
+    if normalized != "HTTP" && normalized != "WS" {
+        return Err(AppError::validation("transport must be HTTP or WS"));
+    }
+
+    Ok(Some(normalized))
 }
