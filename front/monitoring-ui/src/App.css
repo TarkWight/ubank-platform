@@ -224,3 +224,24 @@ th {
 .chip:hover {
   background: #e0e7ff;
 }
+
+.muted {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.pagination-bar.bottom {
+  justify-content: flex-end;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}

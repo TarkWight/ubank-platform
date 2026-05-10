@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { monitoringApi } from "../api/monitoringApi";
 import type { EventItem } from "../api/types";
 
+const DEFAULT_LIMIT = 50;
+
 export function EventsPage() {
   const [items, setItems] = useState<EventItem[]>([]);
   const [service, setService] = useState("");
@@ -11,9 +13,14 @@ export function EventsPage() {
   const [traceId, setTraceId] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [operation, setOperation] = useState("");
+
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [offset, setOffset] = useState(0);
+  const [lastLoadedCount, setLastLoadedCount] = useState(0);
+
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  async function load(nextOffset = offset) {
     try {
       setError(null);
 
@@ -24,30 +31,63 @@ export function EventsPage() {
         traceId,
         idempotencyKey,
         operation,
-        limit: 50,
-        offset: 0,
+        limit,
+        offset: nextOffset,
       });
 
       setItems(response.items);
+      setOffset(nextOffset);
+      setLastLoadedCount(response.items.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     }
   }
 
+  function searchFromStart() {
+    void load(0);
+  }
+
+  function goPrevious() {
+    const nextOffset = Math.max(offset - limit, 0);
+    void load(nextOffset);
+  }
+
+  function goNext() {
+    void load(offset + limit);
+  }
+
   useEffect(() => {
-    void load();
+    void load(0);
   }, []);
+
+  const canGoPrevious = offset > 0;
+  const canGoNext = lastLoadedCount === limit;
 
   return (
     <section>
       <div className="page-header">
-        <h1>Events</h1>
-        <button onClick={load}>Search</button>
+        <div>
+          <h1>Events</h1>
+          <div className="muted">
+            Showing {items.length} events · offset {offset} · limit {limit}
+          </div>
+        </div>
+
+        <button onClick={searchFromStart}>Search</button>
       </div>
 
       <div className="card filters">
-        <input placeholder="service" value={service} onChange={(e) => setService(e.target.value)} />
-        <input placeholder="eventType" value={eventType} onChange={(e) => setEventType(e.target.value)} />
+        <input
+          placeholder="service"
+          value={service}
+          onChange={(e) => setService(e.target.value)}
+        />
+
+        <input
+          placeholder="eventType"
+          value={eventType}
+          onChange={(e) => setEventType(e.target.value)}
+        />
 
         <select value={transport} onChange={(e) => setTransport(e.target.value)}>
           <option value="">transport</option>
@@ -55,9 +95,50 @@ export function EventsPage() {
           <option value="WS">WS</option>
         </select>
 
-        <input placeholder="traceId" value={traceId} onChange={(e) => setTraceId(e.target.value)} />
-        <input placeholder="idempotencyKey" value={idempotencyKey} onChange={(e) => setIdempotencyKey(e.target.value)} />
-        <input placeholder="operation" value={operation} onChange={(e) => setOperation(e.target.value)} />
+        <input
+          placeholder="traceId"
+          value={traceId}
+          onChange={(e) => setTraceId(e.target.value)}
+        />
+
+        <input
+          placeholder="idempotencyKey"
+          value={idempotencyKey}
+          onChange={(e) => setIdempotencyKey(e.target.value)}
+        />
+
+        <input
+          placeholder="operation"
+          value={operation}
+          onChange={(e) => setOperation(e.target.value)}
+        />
+
+        <select
+          value={limit}
+          onChange={(e) => {
+            setLimit(Number(e.target.value));
+            setOffset(0);
+          }}
+        >
+          <option value={25}>25 per page</option>
+          <option value={50}>50 per page</option>
+          <option value={100}>100 per page</option>
+          <option value={200}>200 per page</option>
+        </select>
+      </div>
+
+      <div className="pagination-bar">
+        <button disabled={!canGoPrevious} onClick={goPrevious}>
+          Previous
+        </button>
+
+        <span className="muted">
+          Page {Math.floor(offset / limit) + 1}
+        </span>
+
+        <button disabled={!canGoNext} onClick={goNext}>
+          Next
+        </button>
       </div>
 
       {error && <div className="error-box">{error}</div>}
@@ -110,6 +191,20 @@ export function EventsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="pagination-bar bottom">
+        <button disabled={!canGoPrevious} onClick={goPrevious}>
+          Previous
+        </button>
+
+        <span className="muted">
+          Page {Math.floor(offset / limit) + 1}
+        </span>
+
+        <button disabled={!canGoNext} onClick={goNext}>
+          Next
+        </button>
       </div>
     </section>
   );
