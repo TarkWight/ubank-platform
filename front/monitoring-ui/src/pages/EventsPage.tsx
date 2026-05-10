@@ -21,6 +21,8 @@ export function EventsPage() {
   const [lastLoadedCount, setLastLoadedCount] = useState(0);
 
   const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshIntervalMs, setRefreshIntervalMs] = useState(10000);
 
   async function load(nextOffset = offset) {
     try {
@@ -76,6 +78,31 @@ export function EventsPage() {
     void load(0);
   }, []);
 
+  useEffect(() => {
+    if (!autoRefresh) {
+      return;
+    }
+
+    const timerId = window.setInterval(() => {
+      void load(offset);
+    }, refreshIntervalMs);
+
+    return () => window.clearInterval(timerId);
+  }, [
+    autoRefresh,
+    refreshIntervalMs,
+    offset,
+    limit,
+    service,
+    eventType,
+    transport,
+    traceId,
+    idempotencyKey,
+    operation,
+    from,
+    to,
+  ]);
+
   const canGoPrevious = offset > 0;
   const canGoNext = lastLoadedCount === limit;
 
@@ -90,6 +117,24 @@ export function EventsPage() {
         </div>
 
         <div className="actions">
+          <label className="checkbox-control">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+            />
+            Auto refresh
+          </label>
+
+          <select
+            className="compact-select"
+            value={refreshIntervalMs}
+            onChange={(e) => setRefreshIntervalMs(Number(e.target.value))}
+            disabled={!autoRefresh}
+          >
+            <option value={5000}>5s</option>
+            <option value={10000}>10s</option>
+          </select>
           <button className="secondary-button" onClick={clearFilters}>
             Clear
           </button>

@@ -24,6 +24,8 @@ export function OverviewPage() {
   const [overview, setOverview] = useState<OverviewMetricsResponse | null>(null);
   const [timeseries, setTimeseries] = useState<MetricsTimeseriesPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [refreshIntervalMs, setRefreshIntervalMs] = useState(10000);
 
   async function load() {
     try {
@@ -44,6 +46,18 @@ export function OverviewPage() {
     void load();
   }, []);
 
+  useEffect(() => {
+  if (!autoRefresh) {
+    return;
+  }
+
+  const timerId = window.setInterval(() => {
+    void load();
+  }, refreshIntervalMs);
+
+  return () => window.clearInterval(timerId);
+}, [autoRefresh, refreshIntervalMs]);
+
   if (error) {
     return <div className="error-box">{error}</div>;
   }
@@ -54,10 +68,28 @@ export function OverviewPage() {
 
   return (
     <section>
-      <div className="page-header">
-        <h1>Overview</h1>
-        <button onClick={load}>Refresh</button>
-      </div>
+      <div className="actions">
+  <label className="checkbox-control">
+    <input
+      type="checkbox"
+      checked={autoRefresh}
+      onChange={(e) => setAutoRefresh(e.target.checked)}
+    />
+    Auto refresh
+  </label>
+
+  <select
+    className="compact-select"
+    value={refreshIntervalMs}
+    onChange={(e) => setRefreshIntervalMs(Number(e.target.value))}
+    disabled={!autoRefresh}
+  >
+    <option value={5000}>5s</option>
+    <option value={10000}>10s</option>
+  </select>
+
+  <button onClick={load}>Refresh</button>
+</div>
 
       <div className="metrics-grid">
         <MetricCard title="Total events" value={overview.totalEvents} />
