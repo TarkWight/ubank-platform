@@ -20,7 +20,9 @@ export function EventsPage() {
   const [offset, setOffset] = useState(0);
   const [lastLoadedCount, setLastLoadedCount] = useState(0);
 
+  const [expandedEventId, setExpandedEventId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshIntervalMs, setRefreshIntervalMs] = useState(10000);
 
@@ -44,6 +46,10 @@ export function EventsPage() {
       setItems(response.items);
       setOffset(nextOffset);
       setLastLoadedCount(response.items.length);
+
+      if (!response.items.some((item) => item.id === expandedEventId)) {
+        setExpandedEventId(null);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     }
@@ -63,6 +69,7 @@ export function EventsPage() {
     setFrom("");
     setTo("");
     setOffset(0);
+    setExpandedEventId(null);
   }
 
   function goPrevious() {
@@ -72,6 +79,10 @@ export function EventsPage() {
 
   function goNext() {
     void load(offset + limit);
+  }
+
+  function toggleEvent(eventId: number) {
+    setExpandedEventId((current) => (current === eventId ? null : eventId));
   }
 
   useEffect(() => {
@@ -135,6 +146,7 @@ export function EventsPage() {
             <option value={5000}>5s</option>
             <option value={10000}>10s</option>
           </select>
+
           <button className="secondary-button" onClick={clearFilters}>
             Clear
           </button>
@@ -143,17 +155,8 @@ export function EventsPage() {
       </div>
 
       <div className="card filters">
-        <input
-          placeholder="service"
-          value={service}
-          onChange={(e) => setService(e.target.value)}
-        />
-
-        <input
-          placeholder="eventType"
-          value={eventType}
-          onChange={(e) => setEventType(e.target.value)}
-        />
+        <input placeholder="service" value={service} onChange={(e) => setService(e.target.value)} />
+        <input placeholder="eventType" value={eventType} onChange={(e) => setEventType(e.target.value)} />
 
         <select value={transport} onChange={(e) => setTransport(e.target.value)}>
           <option value="">transport</option>
@@ -161,40 +164,18 @@ export function EventsPage() {
           <option value="WS">WS</option>
         </select>
 
-        <input
-          placeholder="traceId"
-          value={traceId}
-          onChange={(e) => setTraceId(e.target.value)}
-        />
-
-        <input
-          placeholder="idempotencyKey"
-          value={idempotencyKey}
-          onChange={(e) => setIdempotencyKey(e.target.value)}
-        />
-
-        <input
-          placeholder="operation"
-          value={operation}
-          onChange={(e) => setOperation(e.target.value)}
-        />
+        <input placeholder="traceId" value={traceId} onChange={(e) => setTraceId(e.target.value)} />
+        <input placeholder="idempotencyKey" value={idempotencyKey} onChange={(e) => setIdempotencyKey(e.target.value)} />
+        <input placeholder="operation" value={operation} onChange={(e) => setOperation(e.target.value)} />
 
         <label className="field-label">
           <span>From</span>
-          <input
-            type="datetime-local"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
+          <input type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
         </label>
 
         <label className="field-label">
           <span>To</span>
-          <input
-            type="datetime-local"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-          />
+          <input type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
         </label>
 
         <select
@@ -242,35 +223,53 @@ export function EventsPage() {
           </thead>
 
           <tbody>
-            {items.map((event) => (
-              <tr key={event.id}>
-                <td>{new Date(event.timestamp).toLocaleString()}</td>
-                <td>{event.service}</td>
-                <td>{event.transport ?? "—"}</td>
-                <td>{event.operation ?? "—"}</td>
-                <td>
-                  <span className={`badge ${event.eventType.toLowerCase()}`}>
-                    {event.eventType}
-                  </span>
-                </td>
-                <td>{event.status ?? "—"}</td>
-                <td>{event.durationMs ?? "—"}</td>
-                <td className="mono">
-                  <Link to={`/traces/${encodeURIComponent(event.traceId)}`}>
-                    {event.traceId}
-                  </Link>
-                </td>
-                <td className="mono">
-                  {event.idempotencyKey ? (
-                    <Link to={`/idempotency/${encodeURIComponent(event.idempotencyKey)}`}>
-                      {event.idempotencyKey}
-                    </Link>
-                  ) : (
-                    "—"
+            {items.map((event) => {
+              const isExpanded = expandedEventId === event.id;
+
+              return (
+                <>
+                  <tr
+                    key={event.id}
+                    className={isExpanded ? "event-row expanded" : "event-row"}
+                    onClick={() => toggleEvent(event.id)}
+                  >
+                    <td>{new Date(event.timestamp).toLocaleString()}</td>
+                    <td>{event.service}</td>
+                    <td>{event.transport ?? "—"}</td>
+                    <td>{event.operation ?? "—"}</td>
+                    <td>
+                      <span className={`badge ${event.eventType.toLowerCase()}`}>
+                        {event.eventType}
+                      </span>
+                    </td>
+                    <td>{event.status ?? "—"}</td>
+                    <td>{event.durationMs ?? "—"}</td>
+                    <td className="mono" onClick={(e) => e.stopPropagation()}>
+                      <Link to={`/traces/${encodeURIComponent(event.traceId)}`}>
+                        {event.traceId}
+                      </Link>
+                    </td>
+                    <td className="mono" onClick={(e) => e.stopPropagation()}>
+                      {event.idempotencyKey ? (
+                        <Link to={`/idempotency/${encodeURIComponent(event.idempotencyKey)}`}>
+                          {event.idempotencyKey}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+
+                  {isExpanded && (
+                    <tr key={`${event.id}-details`} className="event-details-row">
+                      <td colSpan={9}>
+                        <EventDetails event={event} />
+                      </td>
+                    </tr>
                   )}
-                </td>
-              </tr>
-            ))}
+                </>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -287,6 +286,57 @@ export function EventsPage() {
         </button>
       </div>
     </section>
+  );
+}
+
+function EventDetails(props: { event: EventItem }) {
+  const { event } = props;
+
+  return (
+    <div className="event-details">
+      <div className="details-grid">
+        <Detail label="Event ID" value={event.id} />
+        <Detail label="Trace ID" value={event.traceId} />
+        <Detail label="Span ID" value={event.spanId} />
+        <Detail label="Parent span ID" value={event.parentSpanId} />
+        <Detail label="Idempotency key" value={event.idempotencyKey} />
+        <Detail label="Transport" value={event.transport} />
+        <Detail label="Service" value={event.service} />
+        <Detail label="Operation" value={event.operation} />
+        <Detail label="Event type" value={event.eventType} />
+        <Detail label="Method" value={event.method} />
+        <Detail label="Path" value={event.path} />
+        <Detail label="Status" value={event.status} />
+        <Detail label="Duration ms" value={event.durationMs} />
+        <Detail label="Success" value={event.success === null ? null : String(event.success)} />
+        <Detail label="Attempt" value={event.attempt} />
+      </div>
+
+      {event.error && (
+        <div className="details-block">
+          <h3>Error</h3>
+          <div className="details-grid">
+            <Detail label="Code" value={event.error.code} />
+            <Detail label="Type" value={event.error.type} />
+            <Detail label="Message" value={event.error.message} />
+          </div>
+        </div>
+      )}
+
+      <div className="details-block">
+        <h3>Raw JSON</h3>
+        <pre className="json-block">{JSON.stringify(event, null, 2)}</pre>
+      </div>
+    </div>
+  );
+}
+
+function Detail(props: { label: string; value: string | number | boolean | null | undefined }) {
+  return (
+    <div className="detail-item">
+      <div className="detail-label">{props.label}</div>
+      <div className="detail-value mono">{props.value ?? "—"}</div>
+    </div>
   );
 }
 
