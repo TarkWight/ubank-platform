@@ -16,6 +16,7 @@ pub struct TraceEventView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -28,6 +29,7 @@ pub struct TraceEventView {
     pub error_code: Option<String>,
     pub error_type: Option<String>,
     pub error_message: Option<String>,
+
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -38,6 +40,7 @@ pub struct IdempotencyEventView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -60,6 +63,7 @@ pub struct EventListItemView {
     pub event_type: String,
     pub event_timestamp: OffsetDateTime,
     pub service: String,
+    pub transport: Option<String>,
     pub operation: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
@@ -81,6 +85,7 @@ pub struct EventListQuery {
     pub trace_id: Option<String>,
     pub idempotency_key: Option<String>,
     pub operation: Option<String>,
+    pub transport: Option<String>,
     pub from: Option<OffsetDateTime>,
     pub to: Option<OffsetDateTime>,
     pub limit: i64,

@@ -38,46 +38,45 @@ impl EventsRepository for PostgresEventsRepository {
         Ok(())
     }
 
-    async fn insert_event(
-        &self,
-        event: &MonitoringEvent,
-        raw_payload: &Value,
-    ) -> AppResult<()> {
+    async fn insert_event(&self, event: &MonitoringEvent, raw_payload: &Value) -> AppResult<()> {
         let error_code = event.error.as_ref().and_then(|x| x.code.clone());
         let error_type = event.error.as_ref().and_then(|x| x.error_type.clone());
         let error_message = event.error.as_ref().and_then(|x| x.message.clone());
 
         sqlx::query(
             r#"
-            insert into monitoring_events (
-                trace_id,
-                idempotency_key,
-                event_type,
-                event_timestamp,
-                service,
-                operation,
-                span_id,
-                parent_span_id,
-                method,
-                path,
-                status,
-                duration_ms,
-                success,
-                attempt,
-                error_code,
-                error_type,
-                error_message,
-                raw_payload
-            ) values (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
-            )
-            "#,
+        insert into monitoring_events (
+            trace_id,
+            idempotency_key,
+            event_type,
+            event_timestamp,
+            service,
+            transport,
+            operation,
+            span_id,
+            parent_span_id,
+            method,
+            path,
+            status,
+            duration_ms,
+            success,
+            attempt,
+            error_code,
+            error_type,
+            error_message,
+            raw_payload
+        ) values (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+            $11, $12, $13, $14, $15, $16, $17, $18, $19
+        )
+        "#,
         )
             .bind(&event.trace_id)
             .bind(&event.idempotency_key)
             .bind(event.event_type.as_db_value())
             .bind(event.timestamp)
             .bind(&event.service)
+            .bind(&event.transport)
             .bind(&event.operation)
             .bind(&event.span_id)
             .bind(&event.parent_span_id)
@@ -96,7 +95,6 @@ impl EventsRepository for PostgresEventsRepository {
 
         Ok(())
     }
-
     async fn get_trace_list(&self, limit: i64, offset: i64) -> AppResult<Vec<TraceListItemView>> {
         let rows = sqlx::query(
             r#"
@@ -141,6 +139,7 @@ impl EventsRepository for PostgresEventsRepository {
                 event_type,
                 event_timestamp,
                 service,
+                transport,
                 operation,
                 span_id,
                 parent_span_id,
@@ -171,6 +170,7 @@ impl EventsRepository for PostgresEventsRepository {
                 event_type: row.get("event_type"),
                 event_timestamp: row.get("event_timestamp"),
                 service: row.get("service"),
+                transport: row.get("transport"),
                 operation: row.get("operation"),
                 span_id: row.get("span_id"),
                 parent_span_id: row.get("parent_span_id"),
@@ -187,10 +187,7 @@ impl EventsRepository for PostgresEventsRepository {
             .collect())
     }
 
-    async fn get_events_by_idempotency_key(
-        &self,
-        idempotency_key: &str,
-    ) -> AppResult<Vec<IdempotencyEventView>> {
+    async fn get_events_by_idempotency_key(&self, idempotency_key: &str,) -> AppResult<Vec<IdempotencyEventView>> {
         let rows = sqlx::query(
             r#"
             select
@@ -230,6 +227,7 @@ impl EventsRepository for PostgresEventsRepository {
                 event_type: row.get("event_type"),
                 event_timestamp: row.get("event_timestamp"),
                 service: row.get("service"),
+                transport: row.get("transport"),
                 operation: row.get("operation"),
                 span_id: row.get("span_id"),
                 parent_span_id: row.get("parent_span_id"),
@@ -249,42 +247,45 @@ impl EventsRepository for PostgresEventsRepository {
     async fn get_event_list(&self, query: EventListQuery) -> AppResult<Vec<EventListItemView>> {
         let rows = sqlx::query(
             r#"
-            select
-                id,
-                trace_id,
-                idempotency_key,
-                event_type,
-                event_timestamp,
-                service,
-                operation,
-                span_id,
-                parent_span_id,
-                method,
-                path,
-                status,
-                duration_ms,
-                success,
-                attempt,
-                error_code,
-                error_type,
-                error_message
-            from monitoring_events
-            where ($1::varchar is null or service = $1)
-              and ($2::varchar is null or event_type = $2)
-              and ($3::varchar is null or trace_id = $3)
-              and ($4::varchar is null or idempotency_key = $4)
-              and ($5::varchar is null or operation = $5)
-              and ($6::timestamptz is null or event_timestamp >= $6)
-              and ($7::timestamptz is null or event_timestamp <= $7)
-            order by event_timestamp desc, id desc
-            limit $8 offset $9
-            "#,
+        select
+            id,
+            trace_id,
+            idempotency_key,
+            event_type,
+            event_timestamp,
+            service,
+            transport,
+            operation,
+            span_id,
+            parent_span_id,
+            method,
+            path,
+            status,
+            duration_ms,
+            success,
+            attempt,
+            error_code,
+            error_type,
+            error_message
+        from monitoring_events
+        where ($1::varchar is null or service = $1)
+          and ($2::varchar is null or event_type = $2)
+          and ($3::varchar is null or trace_id = $3)
+          and ($4::varchar is null or idempotency_key = $4)
+          and ($5::varchar is null or operation = $5)
+          and ($6::varchar is null or transport = $6)
+          and ($7::timestamptz is null or event_timestamp >= $7)
+          and ($8::timestamptz is null or event_timestamp <= $8)
+        order by event_timestamp desc, id desc
+        limit $9 offset $10
+        "#,
         )
             .bind(query.service)
             .bind(query.event_type)
             .bind(query.trace_id)
             .bind(query.idempotency_key)
             .bind(query.operation)
+            .bind(query.transport)
             .bind(query.from)
             .bind(query.to)
             .bind(query.limit)
@@ -301,6 +302,7 @@ impl EventsRepository for PostgresEventsRepository {
                 event_type: row.get("event_type"),
                 event_timestamp: row.get("event_timestamp"),
                 service: row.get("service"),
+                transport: row.get("transport"),
                 operation: row.get("operation"),
                 span_id: row.get("span_id"),
                 parent_span_id: row.get("parent_span_id"),

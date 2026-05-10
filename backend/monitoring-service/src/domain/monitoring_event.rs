@@ -53,6 +53,7 @@ pub struct MonitoringEvent {
 
     pub service: String,
     pub operation: Option<String>,
+    pub transport: Option<String>,
     pub span_id: Option<String>,
     pub parent_span_id: Option<String>,
     pub method: Option<String>,
@@ -68,6 +69,14 @@ impl MonitoringEvent {
     pub fn validate(&self) -> Result<(), String> {
         validate_required("traceId", &self.trace_id, 128)?;
         validate_required("service", &self.service, 64)?;
+
+        if let Some(transport) = &self.transport {
+            let normalized = transport.trim().to_uppercase();
+
+            if normalized != "HTTP" && normalized != "WS" {
+                return Err("transport must be HTTP or WS".to_string());
+            }
+        }
 
         if let Some(idempotency_key) = &self.idempotency_key {
             validate_optional("idempotencyKey", idempotency_key, 128)?;
