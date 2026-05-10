@@ -144,6 +144,33 @@ pub struct OperationMetricsView {
     pub total_idempotency_conflicts: i64,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct MetricsTimeseriesPointView {
+    pub bucket_start: OffsetDateTime,
+    pub total_events: i64,
+    pub total_requests: i64,
+    pub total_errors: i64,
+    pub avg_duration_ms: Option<f64>,
+    pub total_retries: i64,
+    pub total_circuit_breaker_open: i64,
+    pub total_idempotency_replays: i64,
+    pub total_idempotency_in_progress: i64,
+    pub total_idempotency_conflicts: i64,
+}
+
+#[derive(Debug, Clone)]
+pub enum MetricsBucket {
+    Minute,
+    Hour,
+}
+
+#[derive(Debug, Clone)]
+pub struct MetricsTimeseriesQuery {
+    pub bucket: MetricsBucket,
+    pub from: Option<OffsetDateTime>,
+    pub to: Option<OffsetDateTime>,
+}
+
 #[async_trait]
 pub trait EventsRepository: Send + Sync {
     async fn ping(&self) -> AppResult<()>;
@@ -180,4 +207,9 @@ pub trait EventsRepository: Send + Sync {
     async fn get_metrics_by_service(&self) -> AppResult<Vec<ServiceMetricsView>>;
 
     async fn get_metrics_by_operation(&self) -> AppResult<Vec<OperationMetricsView>>;
+
+    async fn get_metrics_timeseries(
+        &self,
+        query: MetricsTimeseriesQuery,
+    ) -> AppResult<Vec<MetricsTimeseriesPointView>>;
 }

@@ -19,6 +19,7 @@ use crate::{
             EventListResponse,
             ServiceMetricsResponse,
             OperationMetricsResponse,
+            MetricsTimeseriesResponse,
         },
         state::HttpState,
     },
@@ -44,6 +45,14 @@ pub struct EventListQueryParams {
     pub to: Option<String>,
     pub limit: Option<i64>,
     pub offset: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetricsTimeseriesQueryParams {
+    pub bucket: Option<String>,
+    pub from: Option<String>,
+    pub to: Option<String>,
 }
 
 pub async fn live(
@@ -255,6 +264,27 @@ pub async fn get_metrics_by_operation(
     let items = state.get_metrics_by_operation_query.execute().await?;
 
     Ok(Json(OperationMetricsResponse {
+        items: items.into_iter().map(Into::into).collect(),
+    }))
+}
+
+pub async fn get_metrics_timeseries(
+    State(state): State<HttpState>,
+    Query(params): Query<MetricsTimeseriesQueryParams>,
+) -> AppResult<Json<MetricsTimeseriesResponse>> {
+    let from = parse_optional_rfc3339(params.from.as_deref(), "from")?;
+    let to = parse_optional_rfc3339(params.to.as_deref(), "to")?;
+
+    let items = state
+        .get_metrics_timeseries_query
+        .execute(crate::application::queries::get_metrics_timeseries_query::GetMetricsTimeseriesInput {
+            bucket: params.bucket,
+            from,
+            to,
+        })
+        .await?;
+
+    Ok(Json(MetricsTimeseriesResponse {
         items: items.into_iter().map(Into::into).collect(),
     }))
 }

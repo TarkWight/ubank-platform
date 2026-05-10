@@ -13,6 +13,9 @@ use crate::{
         ServiceMetricsView,
         TraceEventView,
         TraceListItemView,
+        MetricsBucket,
+        MetricsTimeseriesPointView,
+        MetricsTimeseriesQuery,
     },
     domain::monitoring_event::MonitoringEvent,
     shared::error::AppResult,
@@ -419,6 +422,58 @@ impl EventsRepository for PostgresEventsRepository {
             .map(|row| OperationMetricsView {
                 service: row.get("service"),
                 operation: row.get("operation"),
+                total_events: row.get("total_events"),
+                total_requests: row.get("total_requests"),
+                total_errors: row.get("total_errors"),
+                avg_duration_ms: row.get("avg_duration_ms"),
+                total_retries: row.get("total_retries"),
+                total_circuit_breaker_open: row.get("total_circuit_breaker_open"),
+                total_idempotency_replays: row.get("total_idempotency_replays"),
+                total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
+                total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+            })
+            .collect())
+    }
+
+    async fn get_metrics_timeseries(
+        &self,
+        query: MetricsTimeseriesQuery,
+    ) -> AppResult<Vec<MetricsTimeseriesPointView>> {
+        let bucket = match query.bucket {
+            MetricsBucket::Minute => "minute",
+            MetricsBucket::Hour => "hour",
+        };
+
+        let rows = sqlx::query(
+            r#"
+        select
+            date_trunc($1, event_timestamp) as bucket_start,
+            count(*)::bigint as total_events,
+            count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
+            count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+            avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
+            count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
+            count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
+            count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
+            count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
+            count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+        from monitoring_events
+        where ($2::timestamptz is null or event_timestamp >= $2)
+          and ($3::timestamptz is null or event_timestamp <= $3)
+        group by bucket_start
+        order by bucket_start asc
+        "#,
+        )
+            .bind(bucket)
+            .bind(query.from)
+            .bind(query.to)
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(rows
+            .into_iter()
+            .map(|row| MetricsTimeseriesPointView {
+                bucket_start: row.get("bucket_start"),
                 total_events: row.get("total_events"),
                 total_requests: row.get("total_requests"),
                 total_errors: row.get("total_errors"),
