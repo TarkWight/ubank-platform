@@ -8,7 +8,7 @@ import type {
   TraceResponse,
 } from "./types";
 
-const BASE_URL = import.meta.env.VITE_MONITORING_API_URL ?? "http://localhost:8080";
+const BASE_URL = import.meta.env.VITE_MONITORING_API_URL ?? "http://78.140.39.71:8087";
 
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`);
