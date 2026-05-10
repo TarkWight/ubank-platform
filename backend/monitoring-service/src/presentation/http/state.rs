@@ -9,6 +9,7 @@ use crate::{
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_list_query::GetTraceListQuery,
             get_trace_query::GetTraceQuery,
+            get_metrics_timeseries_query::GetMetricsTimeseriesQuery,
         },
         services::ingest_event_service::IngestEventService,
     },
@@ -28,4 +29,5 @@ pub struct HttpState {
     pub get_overview_metrics_query: GetOverviewMetricsQuery,
     pub get_metrics_by_service_query: GetMetricsByServiceQuery,
     pub get_metrics_by_operation_query: GetMetricsByOperationQuery,
+    pub get_metrics_timeseries_query: GetMetricsTimeseriesQuery,
 }

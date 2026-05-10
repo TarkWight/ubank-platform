@@ -16,6 +16,7 @@ use crate::{
             get_overview_metrics_query::GetOverviewMetricsQuery,
             get_trace_query::GetTraceQuery,
             get_trace_list_query::GetTraceListQuery,
+            get_metrics_timeseries_query::GetMetricsTimeseriesQuery,
         },
         services::ingest_event_service::IngestEventService,
     },
@@ -53,6 +54,7 @@ pub async fn run() -> AppResult<()> {
     let get_event_list_query = GetEventListQuery::new(repository.clone());
     let get_metrics_by_service_query = GetMetricsByServiceQuery::new(repository.clone());
     let get_metrics_by_operation_query = GetMetricsByOperationQuery::new(repository.clone());
+    let get_metrics_timeseries_query = GetMetricsTimeseriesQuery::new(repository.clone());
 
     let consumer = RabbitMqConsumer::new(config.clone(), ingest_event_service.clone());
     tokio::spawn(async move {
@@ -72,6 +74,7 @@ pub async fn run() -> AppResult<()> {
         get_overview_metrics_query,
         get_metrics_by_service_query,
         get_metrics_by_operation_query,
+        get_metrics_timeseries_query,
     };
 
     let app = create_router(http_state);
