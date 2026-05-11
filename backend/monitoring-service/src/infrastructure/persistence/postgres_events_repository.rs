@@ -200,6 +200,7 @@ impl EventsRepository for PostgresEventsRepository {
                 event_type,
                 event_timestamp,
                 service,
+                transport,
                 operation,
                 span_id,
                 parent_span_id,
@@ -334,7 +335,15 @@ impl EventsRepository for PostgresEventsRepository {
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
                 count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
                 count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
-                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts,
+                count(*) filter (where event_type = 'WS_CONNECT')::bigint as total_ws_connects,
+                count(*) filter (where event_type = 'WS_CONNECTED')::bigint as total_ws_connected,
+                count(*) filter (where event_type = 'WS_DISCONNECTED')::bigint as total_ws_disconnected,
+                count(*) filter (where event_type = 'WS_RECONNECT')::bigint as total_ws_reconnects,
+                count(*) filter (where event_type = 'WS_SUBSCRIBE')::bigint as total_ws_subscribes,
+                count(*) filter (where event_type = 'WS_MESSAGE_RECEIVED')::bigint as total_ws_messages_received,
+                count(*) filter (where event_type = 'WS_MESSAGE_APPLIED')::bigint as total_ws_messages_applied,
+                count(*) filter (where event_type = 'WS_MESSAGE_ERROR')::bigint as total_ws_message_errors
             from monitoring_events
             "#,
         )
@@ -375,7 +384,15 @@ impl EventsRepository for PostgresEventsRepository {
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
                 count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
                 count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
-                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts,
+                count(*) filter (where event_type = 'WS_CONNECT')::bigint as total_ws_connects,
+                count(*) filter (where event_type = 'WS_CONNECTED')::bigint as total_ws_connected,
+                count(*) filter (where event_type = 'WS_DISCONNECTED')::bigint as total_ws_disconnected,
+                count(*) filter (where event_type = 'WS_RECONNECT')::bigint as total_ws_reconnects,
+                count(*) filter (where event_type = 'WS_SUBSCRIBE')::bigint as total_ws_subscribes,
+                count(*) filter (where event_type = 'WS_MESSAGE_RECEIVED')::bigint as total_ws_messages_received,
+                count(*) filter (where event_type = 'WS_MESSAGE_APPLIED')::bigint as total_ws_messages_applied,
+                count(*) filter (where event_type = 'WS_MESSAGE_ERROR')::bigint as total_ws_message_errors
             from monitoring_events
             group by service
             order by service asc
@@ -423,7 +440,15 @@ impl EventsRepository for PostgresEventsRepository {
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
                 count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
                 count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
-                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts,
+                count(*) filter (where event_type = 'WS_CONNECT')::bigint as total_ws_connects,
+                count(*) filter (where event_type = 'WS_CONNECTED')::bigint as total_ws_connected,
+                count(*) filter (where event_type = 'WS_DISCONNECTED')::bigint as total_ws_disconnected,
+                count(*) filter (where event_type = 'WS_RECONNECT')::bigint as total_ws_reconnects,
+                count(*) filter (where event_type = 'WS_SUBSCRIBE')::bigint as total_ws_subscribes,
+                count(*) filter (where event_type = 'WS_MESSAGE_RECEIVED')::bigint as total_ws_messages_received,
+                count(*) filter (where event_type = 'WS_MESSAGE_APPLIED')::bigint as total_ws_messages_applied,
+                count(*) filter (where event_type = 'WS_MESSAGE_ERROR')::bigint as total_ws_message_errors
             from monitoring_events
             where operation is not null and btrim(operation) <> ''
             group by service, operation
@@ -470,22 +495,30 @@ impl EventsRepository for PostgresEventsRepository {
 
         let rows = sqlx::query(
             r#"
-        select
-            date_trunc($1, event_timestamp) as bucket_start,
-            count(*)::bigint as total_events,
-            count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
-            count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
-            avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
-            count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
-            count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
-            count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
-            count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
-            count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts
-        from monitoring_events
-        where ($2::timestamptz is null or event_timestamp >= $2)
-          and ($3::timestamptz is null or event_timestamp <= $3)
-        group by bucket_start
-        order by bucket_start asc
+            select
+                date_trunc($1, event_timestamp) as bucket_start,
+                count(*)::bigint as total_events,
+                count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
+                count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
+                avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
+                count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
+                count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
+                count(*) filter (where event_type = 'IDEMPOTENCY_REPLAY')::bigint as total_idempotency_replays,
+                count(*) filter (where event_type = 'IDEMPOTENCY_IN_PROGRESS')::bigint as total_idempotency_in_progress,
+                count(*) filter (where event_type = 'IDEMPOTENCY_CONFLICT')::bigint as total_idempotency_conflicts,
+                count(*) filter (where event_type = 'WS_CONNECT')::bigint as total_ws_connects,
+                count(*) filter (where event_type = 'WS_CONNECTED')::bigint as total_ws_connected,
+                count(*) filter (where event_type = 'WS_DISCONNECTED')::bigint as total_ws_disconnected,
+                count(*) filter (where event_type = 'WS_RECONNECT')::bigint as total_ws_reconnects,
+                count(*) filter (where event_type = 'WS_SUBSCRIBE')::bigint as total_ws_subscribes,
+                count(*) filter (where event_type = 'WS_MESSAGE_RECEIVED')::bigint as total_ws_messages_received,
+                count(*) filter (where event_type = 'WS_MESSAGE_APPLIED')::bigint as total_ws_messages_applied,
+                count(*) filter (where event_type = 'WS_MESSAGE_ERROR')::bigint as total_ws_message_errors
+            from monitoring_events
+            where ($2::timestamptz is null or event_timestamp >= $2)
+              and ($3::timestamptz is null or event_timestamp <= $3)
+            group by bucket_start
+            order by bucket_start asc
         "#,
         )
             .bind(bucket)
