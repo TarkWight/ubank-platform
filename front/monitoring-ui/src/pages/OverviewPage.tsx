@@ -124,6 +124,9 @@ export function OverviewPage() {
         <MetricCard title="Retries" value={overview.totalRetries} />
         <MetricCard title="Circuit breaker open" value={overview.totalCircuitBreakerOpen} />
         <MetricCard title="Idempotency conflicts" value={overview.totalIdempotencyConflicts} />
+        <MetricCard title="WS reconnects" value={overview.totalWsReconnects} />
+        <MetricCard title="WS disconnects" value={overview.totalWsDisconnected} />
+        <MetricCard title="WS message errors" value={overview.totalWsMessageErrors} />
       </div>
 
       <div className="charts-grid">
@@ -175,6 +178,21 @@ export function OverviewPage() {
               <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleString()} />
               <Bar dataKey="totalRetries" name="Retries" />
               <Bar dataKey="totalCircuitBreakerOpen" name="Circuit breaker open" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="card chart-card wide-chart">
+          <h2>WebSocket events</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={timeseries}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="bucketStart" tickFormatter={formatTime} />
+              <YAxis />
+              <Tooltip labelFormatter={(value) => new Date(String(value)).toLocaleString()} />
+              <Bar dataKey="totalWsReconnects" name="WS reconnects" />
+              <Bar dataKey="totalWsDisconnected" name="WS disconnects" />
+              <Bar dataKey="totalWsMessageErrors" name="WS message errors" />
             </BarChart>
           </ResponsiveContainer>
         </div>
