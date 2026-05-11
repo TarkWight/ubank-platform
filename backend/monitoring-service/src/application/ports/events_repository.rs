@@ -103,6 +103,14 @@ pub struct OverviewMetrics {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -127,6 +135,14 @@ pub struct ServiceMetricsView {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -142,6 +158,14 @@ pub struct OperationMetricsView {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -156,6 +180,14 @@ pub struct MetricsTimeseriesPointView {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Clone)]

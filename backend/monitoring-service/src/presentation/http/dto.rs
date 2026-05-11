@@ -137,6 +137,15 @@ pub struct OverviewMetricsResponse {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -153,6 +162,14 @@ pub struct ServiceMetricsItemResponse {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -176,6 +193,14 @@ pub struct OperationMetricsItemResponse {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -204,6 +229,14 @@ impl From<ServiceMetricsView> for ServiceMetricsItemResponse {
             total_idempotency_replays: value.total_idempotency_replays,
             total_idempotency_in_progress: value.total_idempotency_in_progress,
             total_idempotency_conflicts: value.total_idempotency_conflicts,
+            total_ws_connects: value.total_ws_connects,
+            total_ws_connected: value.total_ws_connected,
+            total_ws_disconnected: value.total_ws_disconnected,
+            total_ws_reconnects: value.total_ws_reconnects,
+            total_ws_subscribes: value.total_ws_subscribes,
+            total_ws_messages_received: value.total_ws_messages_received,
+            total_ws_messages_applied: value.total_ws_messages_applied,
+            total_ws_message_errors: value.total_ws_message_errors,
         }
     }
 }
@@ -226,6 +259,14 @@ impl From<OverviewMetrics> for OverviewMetricsResponse {
             total_idempotency_replays: value.total_idempotency_replays,
             total_idempotency_in_progress: value.total_idempotency_in_progress,
             total_idempotency_conflicts: value.total_idempotency_conflicts,
+            total_ws_connects: value.total_ws_connects,
+            total_ws_connected: value.total_ws_connected,
+            total_ws_disconnected: value.total_ws_disconnected,
+            total_ws_reconnects: value.total_ws_reconnects,
+            total_ws_subscribes: value.total_ws_subscribes,
+            total_ws_messages_received: value.total_ws_messages_received,
+            total_ws_messages_applied: value.total_ws_messages_applied,
+            total_ws_message_errors: value.total_ws_message_errors,
         }
     }
 }
@@ -479,6 +520,14 @@ impl From<OperationMetricsView> for OperationMetricsItemResponse {
             total_idempotency_replays: value.total_idempotency_replays,
             total_idempotency_in_progress: value.total_idempotency_in_progress,
             total_idempotency_conflicts: value.total_idempotency_conflicts,
+            total_ws_connects: value.total_ws_connects,
+            total_ws_connected: value.total_ws_connected,
+            total_ws_disconnected: value.total_ws_disconnected,
+            total_ws_reconnects: value.total_ws_reconnects,
+            total_ws_subscribes: value.total_ws_subscribes,
+            total_ws_messages_received: value.total_ws_messages_received,
+            total_ws_messages_applied: value.total_ws_messages_applied,
+            total_ws_message_errors: value.total_ws_message_errors,
         }
     }
 }
@@ -497,6 +546,14 @@ pub struct MetricsTimeseriesPointResponse {
     pub total_idempotency_replays: i64,
     pub total_idempotency_in_progress: i64,
     pub total_idempotency_conflicts: i64,
+    pub total_ws_connects: i64,
+    pub total_ws_connected: i64,
+    pub total_ws_disconnected: i64,
+    pub total_ws_reconnects: i64,
+    pub total_ws_subscribes: i64,
+    pub total_ws_messages_received: i64,
+    pub total_ws_messages_applied: i64,
+    pub total_ws_message_errors: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -525,6 +582,14 @@ impl From<MetricsTimeseriesPointView> for MetricsTimeseriesPointResponse {
             total_idempotency_replays: value.total_idempotency_replays,
             total_idempotency_in_progress: value.total_idempotency_in_progress,
             total_idempotency_conflicts: value.total_idempotency_conflicts,
+            total_ws_connects: value.total_ws_connects,
+            total_ws_connected: value.total_ws_connected,
+            total_ws_disconnected: value.total_ws_disconnected,
+            total_ws_reconnects: value.total_ws_reconnects,
+            total_ws_subscribes: value.total_ws_subscribes,
+            total_ws_messages_received: value.total_ws_messages_received,
+            total_ws_messages_applied: value.total_ws_messages_applied,
+            total_ws_message_errors: value.total_ws_message_errors,
         }
     }
 }
