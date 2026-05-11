@@ -13,6 +13,15 @@ pub enum MonitoringEventType {
     IdempotencyReplay,
     IdempotencyInProgress,
     IdempotencyConflict,
+
+    WsConnect,
+    WsConnected,
+    WsDisconnected,
+    WsReconnect,
+    WsSubscribe,
+    WsMessageReceived,
+    WsMessageApplied,
+    WsMessageError,
 }
 
 impl MonitoringEventType {
@@ -27,10 +36,18 @@ impl MonitoringEventType {
             Self::IdempotencyReplay => "IDEMPOTENCY_REPLAY",
             Self::IdempotencyInProgress => "IDEMPOTENCY_IN_PROGRESS",
             Self::IdempotencyConflict => "IDEMPOTENCY_CONFLICT",
+
+            Self::WsConnect => "WS_CONNECT",
+            Self::WsConnected => "WS_CONNECTED",
+            Self::WsDisconnected => "WS_DISCONNECTED",
+            Self::WsReconnect => "WS_RECONNECT",
+            Self::WsSubscribe => "WS_SUBSCRIBE",
+            Self::WsMessageReceived => "WS_MESSAGE_RECEIVED",
+            Self::WsMessageApplied => "WS_MESSAGE_APPLIED",
+            Self::WsMessageError => "WS_MESSAGE_ERROR",
         }
     }
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +93,27 @@ impl MonitoringEvent {
             if normalized != "HTTP" && normalized != "WS" {
                 return Err("transport must be HTTP or WS".to_string());
             }
+        }
+
+        match self.event_type {
+            MonitoringEventType::WsConnect
+            | MonitoringEventType::WsConnected
+            | MonitoringEventType::WsDisconnected
+            | MonitoringEventType::WsReconnect
+            | MonitoringEventType::WsSubscribe
+            | MonitoringEventType::WsMessageReceived
+            | MonitoringEventType::WsMessageApplied
+            | MonitoringEventType::WsMessageError => {
+                match &self.transport {
+                    Some(transport) if transport.trim().eq_ignore_ascii_case("WS") => {}
+                    _ => return Err("transport must be WS for websocket events".to_string()),
+                }
+            }
+            _ => {}
+        }
+
+        if matches!(self.event_type, MonitoringEventType::WsMessageError) && self.error.is_none() {
+            return Err("error is required for WS_MESSAGE_ERROR".to_string());
         }
 
         if let Some(idempotency_key) = &self.idempotency_key {

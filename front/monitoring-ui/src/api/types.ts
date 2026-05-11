@@ -9,6 +9,14 @@ export type OverviewMetricsResponse = {
   totalIdempotencyReplays: number;
   totalIdempotencyInProgress: number;
   totalIdempotencyConflicts: number;
+  totalWsConnects: number;
+  totalWsConnected: number;
+  totalWsDisconnected: number;
+  totalWsReconnects: number;
+  totalWsSubscribes: number;
+  totalWsMessagesReceived: number;
+  totalWsMessagesApplied: number;
+  totalWsMessageErrors: number;
 };
 
 export type MetricsTimeseriesPoint = {
@@ -23,6 +31,14 @@ export type MetricsTimeseriesPoint = {
   totalIdempotencyReplays: number;
   totalIdempotencyInProgress: number;
   totalIdempotencyConflicts: number;
+  totalWsConnects: number;
+  totalWsConnected: number;
+  totalWsDisconnected: number;
+  totalWsReconnects: number;
+  totalWsSubscribes: number;
+  totalWsMessagesReceived: number;
+  totalWsMessagesApplied: number;
+  totalWsMessageErrors: number;
 };
 
 export type MetricsTimeseriesResponse = {
@@ -73,6 +89,14 @@ export type ServiceMetricsItem = {
   totalIdempotencyReplays: number;
   totalIdempotencyInProgress: number;
   totalIdempotencyConflicts: number;
+  totalWsConnects: number;
+  totalWsConnected: number;
+  totalWsDisconnected: number;
+  totalWsReconnects: number;
+  totalWsSubscribes: number;
+  totalWsMessagesReceived: number;
+  totalWsMessagesApplied: number;
+  totalWsMessageErrors: number;
 };
 
 export type ServiceMetricsResponse = {
