@@ -328,7 +328,7 @@ impl EventsRepository for PostgresEventsRepository {
             select
                 count(*)::bigint as total_events,
                 count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
-                count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+                count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
                 avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
                 count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
@@ -351,6 +351,14 @@ impl EventsRepository for PostgresEventsRepository {
             total_idempotency_replays: row.get("total_idempotency_replays"),
             total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
             total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+            total_ws_connects: row.get("total_ws_connects"),
+            total_ws_connected: row.get("total_ws_connected"),
+            total_ws_disconnected: row.get("total_ws_disconnected"),
+            total_ws_reconnects: row.get("total_ws_reconnects"),
+            total_ws_subscribes: row.get("total_ws_subscribes"),
+            total_ws_messages_received: row.get("total_ws_messages_received"),
+            total_ws_messages_applied: row.get("total_ws_messages_applied"),
+            total_ws_message_errors: row.get("total_ws_message_errors"),
         })
     }
 
@@ -361,7 +369,7 @@ impl EventsRepository for PostgresEventsRepository {
                 service,
                 count(*)::bigint as total_events,
                 count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
-                count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+                count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
                 avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
                 count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
@@ -389,6 +397,14 @@ impl EventsRepository for PostgresEventsRepository {
                 total_idempotency_replays: row.get("total_idempotency_replays"),
                 total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
                 total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+                total_ws_connects: row.get("total_ws_connects"),
+                total_ws_connected: row.get("total_ws_connected"),
+                total_ws_disconnected: row.get("total_ws_disconnected"),
+                total_ws_reconnects: row.get("total_ws_reconnects"),
+                total_ws_subscribes: row.get("total_ws_subscribes"),
+                total_ws_messages_received: row.get("total_ws_messages_received"),
+                total_ws_messages_applied: row.get("total_ws_messages_applied"),
+                total_ws_message_errors: row.get("total_ws_message_errors"),
             })
             .collect())
     }
@@ -401,7 +417,7 @@ impl EventsRepository for PostgresEventsRepository {
                 operation,
                 count(*)::bigint as total_events,
                 count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
-                count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+                count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
                 avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
                 count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
                 count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
@@ -431,6 +447,14 @@ impl EventsRepository for PostgresEventsRepository {
                 total_idempotency_replays: row.get("total_idempotency_replays"),
                 total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
                 total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+                total_ws_connects: row.get("total_ws_connects"),
+                total_ws_connected: row.get("total_ws_connected"),
+                total_ws_disconnected: row.get("total_ws_disconnected"),
+                total_ws_reconnects: row.get("total_ws_reconnects"),
+                total_ws_subscribes: row.get("total_ws_subscribes"),
+                total_ws_messages_received: row.get("total_ws_messages_received"),
+                total_ws_messages_applied: row.get("total_ws_messages_applied"),
+                total_ws_message_errors: row.get("total_ws_message_errors"),
             })
             .collect())
     }
@@ -450,7 +474,7 @@ impl EventsRepository for PostgresEventsRepository {
             date_trunc($1, event_timestamp) as bucket_start,
             count(*)::bigint as total_events,
             count(*) filter (where event_type in ('RESPONSE', 'ERROR'))::bigint as total_requests,
-            count(*) filter (where event_type = 'ERROR')::bigint as total_errors,
+            count(*) filter (where event_type in ('ERROR', 'WS_MESSAGE_ERROR'))::bigint as total_errors,
             avg(duration_ms) filter (where event_type in ('RESPONSE', 'ERROR'))::double precision as avg_duration_ms,
             count(*) filter (where event_type = 'RETRY')::bigint as total_retries,
             count(*) filter (where event_type = 'CIRCUIT_BREAKER_OPEN')::bigint as total_circuit_breaker_open,
@@ -483,6 +507,14 @@ impl EventsRepository for PostgresEventsRepository {
                 total_idempotency_replays: row.get("total_idempotency_replays"),
                 total_idempotency_in_progress: row.get("total_idempotency_in_progress"),
                 total_idempotency_conflicts: row.get("total_idempotency_conflicts"),
+                total_ws_connects: row.get("total_ws_connects"),
+                total_ws_connected: row.get("total_ws_connected"),
+                total_ws_disconnected: row.get("total_ws_disconnected"),
+                total_ws_reconnects: row.get("total_ws_reconnects"),
+                total_ws_subscribes: row.get("total_ws_subscribes"),
+                total_ws_messages_received: row.get("total_ws_messages_received"),
+                total_ws_messages_applied: row.get("total_ws_messages_applied"),
+                total_ws_message_errors: row.get("total_ws_message_errors"),
             })
             .collect())
     }
